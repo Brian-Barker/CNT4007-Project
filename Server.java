@@ -13,13 +13,13 @@ public class Server {
         	ServerSocket listener = new ServerSocket(sPort);
 		int clientNum = 1;
         	try {
-            		while(true) {
-                		new Handler(listener.accept(),clientNum).start();
-				System.out.println("Client "  + clientNum + " is connected!");
-				clientNum++;
-            			}
+            	while(true) {
+                	new Handler(listener.accept(),clientNum).start();
+					System.out.println("Client "  + clientNum + " is connected!");
+					clientNum++;
+            	}
         	} finally {
-            		listener.close();
+            	listener.close();
         	} 
  
     	}
@@ -28,18 +28,18 @@ public class Server {
      	* A handler thread class.  Handlers are spawned from the listening
      	* loop and are responsible for dealing with a single client's requests.
      	*/
-    	private static class Handler extends Thread {
-        	private String message;    //message received from the client
+    private static class Handler extends Thread {
+        private String message;    //message received from the client
 		private String MESSAGE;    //uppercase message send to the client
 		private Socket connection;
-        	private ObjectInputStream in;	//stream read from the socket
-        	private ObjectOutputStream out;    //stream write to the socket
+        private ObjectInputStream in;	//stream read from the socket
+        private ObjectOutputStream out;    //stream write to the socket
 		private int no;		//The index number of the client
 
-        	public Handler(Socket connection, int no) {
-            		this.connection = connection;
-	    		this.no = no;
-        	}
+		public Handler(Socket connection, int no) {
+			this.connection = connection;
+			this.no = no;
+		}
 
         public void run() {
  		try{
@@ -61,8 +61,8 @@ public class Server {
 				}
 			}
 			catch(ClassNotFoundException classnot){
-					System.err.println("Data received in unknown format");
-				}
+				System.err.println("Data received in unknown format");
+			}
 		}
 		catch(IOException ioException){
 			System.out.println("Disconnect with Client " + no);

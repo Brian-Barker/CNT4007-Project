@@ -40,11 +40,11 @@ public class Client {
 			}
 		}
 		catch (ConnectException e) {
-    			System.err.println("Connection refused. You need to initiate a server first.");
+			System.err.println("Connection refused. You need to initiate a server first.");
 		} 
 		catch ( ClassNotFoundException e ) {
-            		System.err.println("Class not found");
-        	} 
+			System.err.println("Class not found");
+		} 
 		catch(UnknownHostException unknownHost){
 			System.err.println("You are trying to connect to an unknown host!");
 		}

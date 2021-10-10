@@ -4,7 +4,7 @@ JC = javac
 .java.class:
 	$(JC) $(JFLAGS) $*.java
 
-SAMPLE_CLASSES = \
+CLASSES = \
         Client.java \
         Server.java
 
