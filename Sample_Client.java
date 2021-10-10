@@ -78,7 +78,7 @@ public class Sample_Client {
 	//main method
 	public static void main(String args[])
 	{
-		Client client = new Client();
+		Sample_Client client = new Sample_Client();
 		client.run();
 	}
 

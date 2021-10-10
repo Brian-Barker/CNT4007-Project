@@ -10,21 +10,21 @@ public class Sample_Server {
 
 	public static void main(String[] args) throws Exception {
 		System.out.println("The server is running."); 
-        	ServerSocket listener = new ServerSocket(sPort);
+		ServerSocket listener = new ServerSocket(sPort);
 		int clientNum = 1;
         	try {
-            		while(true) {
-                		new Handler(listener.accept(),clientNum).start();
-				System.out.println("Client "  + clientNum + " is connected!");
-				clientNum++;
-            			}
+				while(true) {
+					new Handler(listener.accept(),clientNum).start();
+					System.out.println("Client "  + clientNum + " is connected!");
+					clientNum++;
+				}
         	} finally {
-            		listener.close();
+				listener.close();
         	} 
  
     	}
 
-	/**
+		/**
      	* A handler thread class.  Handlers are spawned from the listening
      	* loop and are responsible for dealing with a single client's requests.
      	*/
