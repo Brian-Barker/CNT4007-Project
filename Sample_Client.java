@@ -4,14 +4,14 @@ import java.nio.*;
 import java.nio.channels.*;
 import java.util.*;
 
-public class Client {
+public class Sample_Client {
 	Socket requestSocket;           //socket connect to the server
 	ObjectOutputStream out;         //stream write to the socket
  	ObjectInputStream in;          //stream read from the socket
 	String message;                //message send to the server
 	String MESSAGE;                //capitalized message read from the server
 
-	public void Client() {}
+	public void Sample_Client() {}
 
 	void run()
 	{
