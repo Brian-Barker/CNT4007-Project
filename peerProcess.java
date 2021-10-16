@@ -24,12 +24,12 @@ public class PeerProcess {
 	public void connectToPreviousPeers() {
 		for (int i = 0; i < peerInfo.size(); i++) {
 			RemotePeerInfo peer = peerInfo.get(i);
-			System.out.println(this.peerId + "r " + peer.peerId);
+			// System.out.println(this.peerId + "r " + peer.peerId);
 			if (peer.peerId.equals(this.peerId)) {
-				// System.out.println("rk " + peer.peerId);
 				setupListening(peer);
 				return;
 			}
+			System.out.println("connecting to " + peer.peerId + " as " + this.peerId);
 			connectToPeer(peer);
 		}
 	}

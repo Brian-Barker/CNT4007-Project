@@ -28,6 +28,7 @@ public class ConnectionListener implements Runnable {
 
         while (true) {
           Socket client = serverSocket.accept();
+          System.out.println("Accepting client " + port);
           PeerConnection peer = new PeerConnection(client);
           peersSockets.put(port, peer);
         }
@@ -37,7 +38,10 @@ public class ConnectionListener implements Runnable {
         if (!peersSockets.containsKey(port)) {
           Socket clientSocket = new Socket(peerInfo.peerAddress, port);
           PeerConnection peer = new PeerConnection(clientSocket);
+          System.out.println("Connecting to " + port + " from " + peerInfo.peerId + " " + peerInfo.peerPort);
           peersSockets.put(port, peer);
+        } else {
+          System.out.println("Already exists " + port);
         }
       }
 

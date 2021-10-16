@@ -1,2 +1,1 @@
-javac RemotePeerInfo.java
-javac StartRemotePeers.java
+javac -d out StartPeer.java PeerProcess.java PeerConnection.java ConnectionListener.java ConfigReader.java RemotePeerInfo.java

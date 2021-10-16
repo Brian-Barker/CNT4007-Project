@@ -22,7 +22,6 @@ public class StartRemotePeers {
 
 	public void getConfiguration() {
 		String st;
-		int i1;
 		peerInfoVector = new Vector<RemotePeerInfo>();
 		try {
 			BufferedReader in = new BufferedReader(new FileReader("project_config_file_small/PeerInfo.cfg"));
@@ -49,7 +48,6 @@ public class StartRemotePeers {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 		try {
 			StartRemotePeers myStart = new StartRemotePeers();
 			myStart.getConfiguration();
