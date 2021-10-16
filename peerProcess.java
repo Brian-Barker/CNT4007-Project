@@ -1,32 +1,71 @@
-import java.net.*;
-import java.io.*;
-import java.nio.*;
-import java.nio.channels.*;
 import java.util.*;
 
 public class PeerProcess {
 	// private static final int port = 6008;
 	private String peerId;
+	Map<String, String> commonConfig;
+	Vector<RemotePeerInfo> peerInfo;
+	// handle other peers that want to connect to us
+	ConnectionListener serverConnections;
+
+	// unknown if we need to keep track of the threads
+	Thread serverThread;
+	Vector<Thread> clientThreads = new Vector<Thread>();
 
 	public void start(String id) {
 		this.peerId = id;
-		Map<String, String> common = ConfigReader.getCommonConfig("project_config_file_small/Common.cfg");
-		common.forEach((key, value) -> System.out.println(key + ":" + value));
-
+		commonConfig = ConfigReader.getCommonConfig("Common.cfg");
+		// common.forEach((key, value) -> System.out.println(key + ":" + value));
+		peerInfo = ConfigReader.getPeerList("PeerInfo.cfg");
+		connectToPreviousPeers();
+		joinThreads();
 	}
 
-	public void initiateConnectionWithPeer(int peerId) {
-
+	public void connectToPreviousPeers() {
+		for (int i = 0; i < peerInfo.size(); i++) {
+			RemotePeerInfo peer = peerInfo.get(i);
+			System.out.println(this.peerId + "r " + peer.peerId);
+			if (peer.peerId.equals(this.peerId)) {
+				// System.out.println("rk " + peer.peerId);
+				setupListening(peer);
+				return;
+			}
+			connectToPeer(peer);
+		}
 	}
 
-	public void receiveConnectionFromPeer() {
+	public void joinThreads() {
+		try {
+			serverThread.join();
+			for (int i = 0; i < clientThreads.size(); i++) {
+				clientThreads.get(i).join();
+			}
+		} catch (InterruptedException e) {
 
+		}
 	}
 
-	/**
-	 * A handler thread class. Handlers are spawned from the listening loop and are
-	 * responsible for dealing with a single peer's requests.
+	public void setupListening(RemotePeerInfo thisPeer) {
+		serverConnections = new ConnectionListener();
+		serverConnections.peerInfo = thisPeer;
+		serverConnections.server = true;
+		serverThread = new Thread(serverConnections);
+		serverThread.start();
+	}
+
+	public void connectToPeer(RemotePeerInfo peerInfo) {
+		ConnectionListener clientConnection = new ConnectionListener();
+		clientConnection.peerInfo = peerInfo;
+		clientConnection.server = false;
+		Thread t1 = new Thread(clientConnection);
+		t1.start();
+		clientThreads.addElement(t1);
+	}
+
+	/*
+	 * A handler thread class.
 	 */
+
 	// private static class Handler extends Thread {
 	// private Socket connection;
 	// private ObjectInputStream in; //stream read from the socket
