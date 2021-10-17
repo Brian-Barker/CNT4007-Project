@@ -9,7 +9,7 @@ public class StartPeer {
 
       // start the peer with the valid peer id
       PeerProcess peer = new PeerProcess();
-      peer.start(peerId);
+      peer.start(Integer.parseInt(peerId));
     } catch (Exception e) {
       System.out.println(e.getMessage());
     }

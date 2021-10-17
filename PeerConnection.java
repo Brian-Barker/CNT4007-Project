@@ -11,10 +11,16 @@ public class PeerConnection {
   private Socket clientSocket;
   static private PeerInfo localPeer;
   private PeerInfo otherPeer;
+  public BitSet otherPeerBitfield;
+
   // output steam is the data to send to the other peer
   private DataOutputStream out;
   // input stream is the data coming in from the other peer
   private DataInputStream in;
+
+  private final byte TYPE_INTERESTED = 2;
+  private final byte TYPE_BITFIELD = 5;
+  private final byte[] EMPTY_BYTES = new byte[] {};
 
   PeerConnection(Socket client, PeerInfo otherPeer) {
     this.clientSocket = client;
@@ -47,23 +53,20 @@ public class PeerConnection {
       while (true) {
         System.out.println("Starting to listen");
         int length = in.readInt();
-        System.out.println("DLKFJ:S " + length);
         byte type = in.readByte();
         byte[] payload = in.readNBytes(length - 1);
-        System.out.println("Got message " + length + " " + type);
+        if (type == 2) {
+          System.out.println("AYO PEER " + otherPeer.peerId + " IS INTERESTED IN MY PIECES");
+        }
         if (type == 5) {
           System.out.println("Got bitfield " + Arrays.toString(payload));
-          for (byte b : payload) {
-            System.out.println(Integer.toBinaryString(b & 255 | 256).substring(1));
-          }
           BitSet set = BitSet.valueOf(payload);
-          StringBuilder s = new StringBuilder();
-          for (int i = 0; i < set.length(); i++) {
-            s.append(set.get(i) == true ? "1" : "0");
-            // System.out.println(i + ":" + bitfield.get(i));
-          }
+          // TODO dont forget, this properly is not always be set
+          otherPeerBitfield = set;
 
-          System.out.println("2S:" + s);
+          if (PieceHandler.getInstance().shouldBeInterested(otherPeerBitfield)) {
+            sendMessage(TYPE_INTERESTED, EMPTY_BYTES);
+          }
         }
       }
     } catch (IOException e) {
@@ -74,44 +77,51 @@ public class PeerConnection {
 
   public void readHandshake() {
     try {
-      byte[] handshake = in.readNBytes(32);
-      System.out.println("GOT HANDSHAKE FROM " + Arrays.toString(handshake));
+      String header = new String(in.readNBytes(18));
+      if (header.equals("P2PFILESHARINGPROJ")) {
+        in.readNBytes(10); // the empty 10 bytes of 0
+        int otherId = in.readInt();
+        otherPeer.peerId = otherId;
+        System.out.println("Got valid handshake from " + otherId);
+        sendBitfield();
+      }
 
-      sendBitfield();
     } catch (IOException e) {
 
     }
   }
 
   public void sendBitfield() {
-    if (localPeer.hasEntireFile) {
-
+    // only send bitfield if we have at least one pieces
+    if (PieceHandler.getInstance().bitfieldCardinality() > 0) {
       byte[] bitfieldBytes = PieceHandler.getInstance().bitfieldToByteArray();
-      byte[] message = new byte[5 + bitfieldBytes.length];
-      // subtract 4 since we are not including the length int itself
-      byte[] lengthBytes = lengthToByteArray(message.length - 4);
-      byte type = 5;
+      System.out.println("Sending bitfield");
+      sendMessage(TYPE_BITFIELD, bitfieldBytes);
+    }
+  }
 
-      System.arraycopy(bitfieldBytes, 0, message, 5, bitfieldBytes.length);
-      System.arraycopy(lengthBytes, 0, message, 0, 4);
-      message[4] = type;
-      try {
-        System.out.println("Sending bitfield " + Arrays.toString(message) + " " + message.length + " "
-            + bitfieldBytes.length + " " + Arrays.toString(bitfieldBytes));
-        out.write(message);
-      } catch (IOException e) {
-        System.out.println("Error sending " + e);
-      }
+  public void sendMessage(byte messageType, byte[] payload) {
+    byte[] message = new byte[5 + payload.length];
+    // subtract 4 since we are not including the length int itself
+    byte[] lengthBytes = lengthToByteArray(message.length - 4);
+
+    System.arraycopy(payload, 0, message, 5, payload.length);
+    System.arraycopy(lengthBytes, 0, message, 0, 4);
+    message[4] = messageType;
+    try {
+      out.write(message);
+    } catch (IOException e) {
+      System.out.println("Error sending " + e);
     }
   }
 
   public void sendHandshake() {
     String header = "P2PFILESHARINGPROJ";
     String empty10Bytes = "\u0000".repeat(10);
-    int peerId = Integer.parseInt(PeerConnection.localPeer.peerId);
+    int peerId = PeerConnection.localPeer.peerId;
     byte[] handshake = ByteBuffer.allocate(32).put(header.getBytes()).put(empty10Bytes.getBytes()).putInt(peerId)
         .array();
-    System.out.println("Sending handshake " + Arrays.toString(handshake) + " " + handshake.length + " " + peerId);
+    System.out.println("Sending handshake as " + peerId);
 
     try {
       out.write(handshake);

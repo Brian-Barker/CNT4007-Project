@@ -15,7 +15,7 @@ public class ConfigReader {
       while ((st = in.readLine()) != null) {
         String[] tokens = st.split("\\s+");
 
-        String peerId = tokens[0];
+        int peerId = Integer.parseInt(tokens[0]);
         String peerAddress = tokens[1];
         int port = Integer.parseInt(tokens[2]);
         boolean hasEntireFile = tokens[3].equals("1");

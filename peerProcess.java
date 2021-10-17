@@ -2,7 +2,7 @@ import java.util.*;
 
 public class PeerProcess {
 	// private static final int port = 6008;
-	private String peerId;
+	private int peerId;
 	Map<String, String> commonConfig;
 	Vector<PeerInfo> peerInfo;
 	// handle other peers that want to connect to us
@@ -12,7 +12,7 @@ public class PeerProcess {
 	Thread serverThread;
 	Vector<Thread> clientThreads = new Vector<Thread>();
 
-	public void start(String id) {
+	public void start(int id) {
 		this.peerId = id;
 		commonConfig = ConfigReader.getCommonConfig("Common.cfg");
 		// common.forEach((key, value) -> System.out.println(key + ":" + value));
@@ -26,7 +26,7 @@ public class PeerProcess {
 		for (int i = 0; i < peerInfo.size(); i++) {
 			PeerInfo peer = peerInfo.get(i);
 			// System.out.println(this.peerId + "r " + peer.peerId);
-			if (peer.peerId.equals(this.peerId)) {
+			if (peer.peerId == this.peerId) {
 				setupLocalPeer(peer);
 				return;
 			}
@@ -36,9 +36,9 @@ public class PeerProcess {
 	}
 
 	public void setupLocalPeer(PeerInfo peer) {
+		PieceHandler.getInstance().initBitfield(commonConfig);
 		if (peer.hasEntireFile) {
-			System.out.println("Loading file");
-			PieceHandler.getInstance().loadFile(commonConfig);
+			PieceHandler.getInstance().loadFile();
 		}
 		PeerConnection.setLocalPeer(peer);
 		setupListening(peer);
@@ -73,60 +73,4 @@ public class PeerProcess {
 		t1.start();
 		clientThreads.addElement(t1);
 	}
-
-	/*
-	 * A handler thread class.
-	 */
-
-	// private static class Handler extends Thread {
-	// private Socket connection;
-	// private ObjectInputStream in; //stream read from the socket
-	// private ObjectOutputStream out; //stream write to the socket
-	// private String peerId; //The index number of the client
-
-	// public Handler(Socket connection, String peerId) {
-	// this.connection = connection;
-	// this.peerId = peerId;
-	// }
-
-	// public void run() {
-	// try{
-	// //initialize Input and Output streams
-	// out = new ObjectOutputStream(connection.getOutputStream());
-	// out.flush();
-	// in = new ObjectInputStream(connection.getInputStream());
-	// try{
-	// while(true)
-	// {
-	// //receive the message sent from the client
-	// message = (String)in.readObject();
-	// //show the message to the user
-	// System.out.println("Receive message: " + message + " from client " + no);
-	// //Capitalize all letters in the message
-	// MESSAGE = message.toUpperCase();
-	// //send MESSAGE back to the client
-	// sendMessage(MESSAGE);
-	// }
-	// }
-	// catch(ClassNotFoundException classnot){
-	// System.err.println("Data received in unknown format");
-	// }
-	// }
-	// catch(IOException ioException){
-	// System.out.println("Disconnect with Client " + no);
-	// }
-	// finally{
-	// //Close connections
-	// try{
-	// in.close();
-	// out.close();
-	// connection.close();
-	// }
-	// catch(IOException ioException){
-	// System.out.println("Disconnect with Client " + no);
-	// }
-	// }
-	// }
-	// }
-
 }

@@ -18,12 +18,10 @@ public class PieceHandler {
   private static Object mutex = new Object();
 
   // these are shared among all threads
-
   private byte[] fileData;
   private BitSet bitfield;
   int pieceSize = 0;
   int fileSize = 0;
-  // these dont really need to exist
   String fileName = "";
   int pieces = 0;
 
@@ -42,42 +40,31 @@ public class PieceHandler {
     return result;
   }
 
-  public void loadFile(Map<String, String> config) {
+  public void initBitfield(Map<String, String> config) {
     String fileName = config.get("FileName");
     int fileSize = Integer.parseInt(config.get("FileSize"));
     int pieceSize = Integer.parseInt(config.get("PieceSize"));
 
     int pieces = (int) Math.ceil((float) fileSize / (float) pieceSize);
 
+    this.fileName = fileName;
     this.fileSize = fileSize;
     this.pieceSize = pieceSize;
     this.pieces = pieces;
 
+    int spareBits = 0;// 8 - (pieces % 8);
+
+    int bitfieldLength = pieces + spareBits;
+    this.bitfield = new BitSet(bitfieldLength);
+  }
+
+  public void loadFile() {
+    System.out.println("Loading file");
+
     try {
-      this.fileData = Files.readAllBytes(Paths.get(fileName));
+      this.fileData = Files.readAllBytes(Paths.get(this.fileName));
 
-      int spareBits = 8 - (pieces % 8);
-
-      int bitfieldLength = pieces + spareBits;
-      this.bitfield = new BitSet(bitfieldLength);
-      // this.bitfield.set(0, bitfieldLength + 1, false);
       this.bitfield.set(0, pieces, true);
-      // if (spareBits > 0) {
-      // bitfield.set(bitfieldLength-1);
-      // }
-
-      // System.out.println("READING " + fileName + " " + fileData.length + " " +
-      // pieces + " " + spareBits + " "
-      // + bitfieldLength + " " + bitfield.length());
-
-      StringBuilder s = new StringBuilder();
-      for (int i = 0; i < bitfield.length(); i++) {
-        s.append(bitfield.get(i) == true ? "1" : "0");
-        // System.out.println(i + ":" + bitfield.get(i));
-      }
-
-      System.out.println("S:" + s);
-      // Arrays.fill(this.bitfield, true);
     } catch (IOException e) {
       System.out.println("E " + e);
     }
@@ -94,12 +81,24 @@ public class PieceHandler {
     return Arrays.copyOfRange(fileData, byteStart, byteEnd + 1);
   }
 
+  // compares other peer bitset and sees if current peer should be interested
+  public boolean shouldBeInterested(BitSet otherPeerBitset) {
+    // bitset length retuns the position of the highest set bit
+    for (int i = 0; i < Math.max(bitfield.length(), otherPeerBitset.length()); i++) {
+      if (bitfield.get(i) == false && otherPeerBitset.get(i) == true) {
+        // other peer has this piece and we dont
+        return true;
+      }
+    }
+    return false;
+  }
+
   public byte[] bitfieldToByteArray() {
     byte[] bitfieldBytes = bitfield.toByteArray();
-    byte[] flipped = ByteBuffer.wrap(bitfieldBytes).order(ByteOrder.BIG_ENDIAN).array();
-    System.out.println("Conv " + Arrays.toString(bitfieldBytes));
-    System.out.println("Conv2 " + Arrays.toString(flipped));
-
     return bitfieldBytes;
+  }
+
+  public int bitfieldCardinality() {
+    return bitfield.cardinality();
   }
 }
