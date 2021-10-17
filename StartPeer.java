@@ -1,7 +1,8 @@
 public class StartPeer {
   public static void main(String args[]) {
-    String peerId = "1001";// args[0];
     try {
+      String peerId = args[0];
+
       if (!peerId.matches("\\d\\d\\d\\d")) {
         throw new Exception("Error: Invalid peerId: " + peerId);
       }

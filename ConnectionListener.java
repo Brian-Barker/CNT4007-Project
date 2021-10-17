@@ -14,48 +14,52 @@ import java.util.HashMap;
 */
 
 public class ConnectionListener implements Runnable {
-  private ServerSocket serverSocket;
-  private Map<Integer, PeerConnection> peersSockets = new HashMap<>();
-  public RemotePeerInfo peerInfo;
+
+  public PeerInfo peerInfo;
   public boolean server = false;
 
   public void run() {
+
+    int port = peerInfo.peerPort;
+    if (port > 0 && server) {
+      // server code
+      serverListen(port);
+    } else if (port > 0 && !server) {
+      // client code
+      clientConnect(port);
+    }
+
+  }
+
+  public void serverListen(int port) {
     try {
-      int port = Integer.parseInt(peerInfo.peerPort);
-      if (port > 0 && server) {
-        // server code
-        serverSocket = new ServerSocket(port);
+      ServerSocket serverSocket = new ServerSocket(port);
 
-        while (true) {
-          Socket client = serverSocket.accept();
-          System.out.println("Accepting client " + port);
-          PeerConnection peer = new PeerConnection(client);
-          peersSockets.put(port, peer);
-        }
-      } else if (port > 0 && !server) {
-        // client code
-        // TODO properly deal with if the socket already exists
-        if (!peersSockets.containsKey(port)) {
-          Socket clientSocket = new Socket(peerInfo.peerAddress, port);
-          PeerConnection peer = new PeerConnection(clientSocket);
-          System.out.println("Connecting to " + port + " from " + peerInfo.peerId + " " + peerInfo.peerPort);
-          peersSockets.put(port, peer);
-        } else {
-          System.out.println("Already exists " + port);
-        }
+      ConnectionHandler.getInstance().setServerSocket(serverSocket);
+
+      while (true) {
+        Socket client = serverSocket.accept();
+        System.out.println("Accepting client " + port);
+        PeerConnection peer = new PeerConnection(client, port);
+        ConnectionHandler.getInstance().savePeerSocket(port, peer);
       }
-
     } catch (IOException e) {
 
     }
   }
 
-  public void close() {
+  public void clientConnect(int port) {
     try {
-      for (int i = 0; i < peersSockets.size(); i++) {
-        peersSockets.get(i).close();
+      // TODO properly deal with if the socket already exists
+      if (!ConnectionHandler.getInstance().peerConnectionExists(port)) {
+        // the peerInfo is the peer to connect to
+        Socket clientSocket = new Socket(peerInfo.peerAddress, port);
+        System.out.println("Connecting to " + port + " from " + peerInfo.peerId + " " + peerInfo.peerPort);
+        PeerConnection peer = new PeerConnection(clientSocket, peerInfo);
+        ConnectionHandler.getInstance().savePeerSocket(port, peer);
+      } else {
+        System.out.println("Already exists " + port);
       }
-      serverSocket.close();
     } catch (IOException e) {
 
     }

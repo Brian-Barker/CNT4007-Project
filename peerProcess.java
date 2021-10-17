@@ -4,7 +4,7 @@ public class PeerProcess {
 	// private static final int port = 6008;
 	private String peerId;
 	Map<String, String> commonConfig;
-	Vector<RemotePeerInfo> peerInfo;
+	Vector<PeerInfo> peerInfo;
 	// handle other peers that want to connect to us
 	ConnectionListener serverConnections;
 
@@ -23,9 +23,10 @@ public class PeerProcess {
 
 	public void connectToPreviousPeers() {
 		for (int i = 0; i < peerInfo.size(); i++) {
-			RemotePeerInfo peer = peerInfo.get(i);
+			PeerInfo peer = peerInfo.get(i);
 			// System.out.println(this.peerId + "r " + peer.peerId);
 			if (peer.peerId.equals(this.peerId)) {
+				PeerConnection.setLocalPeer(peer);
 				setupListening(peer);
 				return;
 			}
@@ -45,7 +46,8 @@ public class PeerProcess {
 		}
 	}
 
-	public void setupListening(RemotePeerInfo thisPeer) {
+	// done once
+	public void setupListening(PeerInfo thisPeer) {
 		serverConnections = new ConnectionListener();
 		serverConnections.peerInfo = thisPeer;
 		serverConnections.server = true;
@@ -53,7 +55,8 @@ public class PeerProcess {
 		serverThread.start();
 	}
 
-	public void connectToPeer(RemotePeerInfo peerInfo) {
+	// done per client to connect to
+	public void connectToPeer(PeerInfo peerInfo) {
 		ConnectionListener clientConnection = new ConnectionListener();
 		clientConnection.peerInfo = peerInfo;
 		clientConnection.server = false;

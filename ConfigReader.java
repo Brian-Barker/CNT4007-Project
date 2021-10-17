@@ -6,15 +6,20 @@ import java.io.FileReader;
 
 public class ConfigReader {
 
-  public static Vector<RemotePeerInfo> getPeerList(String filename) {
-    Vector<RemotePeerInfo> peerInfoVector = new Vector<RemotePeerInfo>();
+  public static Vector<PeerInfo> getPeerList(String filename) {
+    Vector<PeerInfo> peerInfoVector = new Vector<PeerInfo>();
 
     try {
       String st;
       BufferedReader in = new BufferedReader(new FileReader(filename));
       while ((st = in.readLine()) != null) {
         String[] tokens = st.split("\\s+");
-        peerInfoVector.addElement(new RemotePeerInfo(tokens[0], tokens[1], tokens[2], tokens[3].equals("1")));
+
+        String peerId = tokens[0];
+        String peerAddress = tokens[1];
+        int port = Integer.parseInt(tokens[2]);
+        boolean hasEntireFile = tokens[3].equals("1");
+        peerInfoVector.addElement(new PeerInfo(peerId, peerAddress, port, hasEntireFile));
       }
 
       in.close();

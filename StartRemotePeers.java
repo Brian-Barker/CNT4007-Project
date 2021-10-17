@@ -18,30 +18,32 @@ import java.util.*;
  */
 public class StartRemotePeers {
 
-	public Vector<RemotePeerInfo> peerInfoVector;
+	public Vector<PeerInfo> peerInfoVector;
 
 	public void getConfiguration() {
 		String st;
-		peerInfoVector = new Vector<RemotePeerInfo>();
-		try {
-			BufferedReader in = new BufferedReader(new FileReader("project_config_file_small/PeerInfo.cfg"));
-			while ((st = in.readLine()) != null) {
+		peerInfoVector = new Vector<PeerInfo>();
+		// try {
+		// BufferedReader in = new BufferedReader(new
+		// FileReader("project_config_file_small/PeerInfo.cfg"));
+		// while ((st = in.readLine()) != null) {
 
-				String[] tokens = st.split("\\s+");
-				// System.out.println("tokens begin ----");
-				// for (int x=0; x<tokens.length; x++) {
-				// System.out.println(tokens[x]);
-				// }
-				// System.out.println("tokens end ----");
+		// String[] tokens = st.split("\\s+");
+		// // System.out.println("tokens begin ----");
+		// // for (int x=0; x<tokens.length; x++) {
+		// // System.out.println(tokens[x]);
+		// // }
+		// // System.out.println("tokens end ----");
 
-				peerInfoVector.addElement(new RemotePeerInfo(tokens[0], tokens[1], tokens[2], tokens[3].equals("1")));
+		// peerInfoVector.addElement(new PeerInfo(tokens[0], tokens[1], tokens[2],
+		// tokens[3].equals("1")));
 
-			}
+		// }
 
-			in.close();
-		} catch (Exception ex) {
-			System.out.println(ex.toString());
-		}
+		// in.close();
+		// } catch (Exception ex) {
+		// System.out.println(ex.toString());
+		// }
 	}
 
 	/**
@@ -57,7 +59,7 @@ public class StartRemotePeers {
 
 			// start clients at remote hosts
 			for (int i = 0; i < myStart.peerInfoVector.size(); i++) {
-				RemotePeerInfo pInfo = (RemotePeerInfo) myStart.peerInfoVector.elementAt(i);
+				PeerInfo pInfo = (PeerInfo) myStart.peerInfoVector.elementAt(i);
 
 				System.out.println("Start remote peer " + pInfo.peerId + " at " + pInfo.peerAddress);
 
