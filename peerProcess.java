@@ -17,6 +17,7 @@ public class PeerProcess {
 		commonConfig = ConfigReader.getCommonConfig("Common.cfg");
 		// common.forEach((key, value) -> System.out.println(key + ":" + value));
 		peerInfo = ConfigReader.getPeerList("PeerInfo.cfg");
+
 		connectToPreviousPeers();
 		joinThreads();
 	}
@@ -26,13 +27,21 @@ public class PeerProcess {
 			PeerInfo peer = peerInfo.get(i);
 			// System.out.println(this.peerId + "r " + peer.peerId);
 			if (peer.peerId.equals(this.peerId)) {
-				PeerConnection.setLocalPeer(peer);
-				setupListening(peer);
+				setupLocalPeer(peer);
 				return;
 			}
 			System.out.println("connecting to " + peer.peerId + " as " + this.peerId);
 			connectToPeer(peer);
 		}
+	}
+
+	public void setupLocalPeer(PeerInfo peer) {
+		if (peer.hasEntireFile) {
+			System.out.println("Loading file");
+			PieceHandler.getInstance().loadFile(commonConfig);
+		}
+		PeerConnection.setLocalPeer(peer);
+		setupListening(peer);
 	}
 
 	public void joinThreads() {
