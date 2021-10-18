@@ -5,6 +5,7 @@ public class PeerProcess {
 	private int peerId;
 	Map<String, String> commonConfig;
 	Vector<PeerInfo> peerInfo;
+	File peerDirectory;
 	// handle other peers that want to connect to us
 	ConnectionListener serverConnections;
 
@@ -15,6 +16,7 @@ public class PeerProcess {
 	public void start(int id) {
 		this.peerId = id;
 		commonConfig = ConfigReader.getCommonConfig("Common.cfg");
+		initializePeerDirectory();
 		// common.forEach((key, value) -> System.out.println(key + ":" + value));
 		peerInfo = ConfigReader.getPeerList("PeerInfo.cfg");
 
@@ -72,5 +74,13 @@ public class PeerProcess {
 		Thread t1 = new Thread(clientConnection);
 		t1.start();
 		clientThreads.addElement(t1);
+	}
+	
+	public void initializePeerDirectory() {
+		File directory = new File("../peer_" + peerId);
+		if (!directory.exists()) {
+			directory.mkdir();
+		}
+		peerDirectory = directory;
 	}
 }
