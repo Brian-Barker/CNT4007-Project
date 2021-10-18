@@ -57,7 +57,7 @@ public class ConnectionHandler {
     TimerTask task = new TimerTask() {
       public void run() {
         Vector<Integer> currentlyUnchoked = getUnchokedPeers();
-        Vector<Integer> newlyUnchoked = new Vector<>();
+        Map<Integer, Boolean> shouldBeUnchoked = new HashMap<>();
 
         if (PeerConnection.localPeer.hasEntireFile) {
           // randomly choose from those interested
@@ -66,13 +66,13 @@ public class ConnectionHandler {
           if (interestedPeers.size() > 0) {
             ThreadLocalRandom.current().ints(0, interestedPeers.size()).distinct()
                 .limit(Math.min(interestedPeers.size(), numPreferredNeighbors)).forEach((index) -> {
-                  Integer randomPort = interestedPeers.get(index);
-                  PeerConnection randomPeer = peersSockets.get(randomPort);
+                  Integer randomId = interestedPeers.get(index);
+                  PeerConnection randomPeer = peersSockets.get(randomId);
                   if (randomPeer.isChoked()) {
                     System.out.println("Unchoking peer " + randomPeer.otherPeer.peerId);
                     randomPeer.unchokeConnection();
-                    newlyUnchoked.add(randomPort);
                   }
+                  shouldBeUnchoked.put(randomId, true);
                 });
           }
         } else {
@@ -94,19 +94,28 @@ public class ConnectionHandler {
 
           int numNeighbors = Math.min(interestedPeers.size(), Configs.getPreferredNeighbors());
           for (int i = 0; i < numNeighbors; i++) {
-            Integer port = interestedPeers.get(i);
-            PeerConnection conn = peersSockets.get(port);
+            Integer peerId = interestedPeers.get(i);
+            PeerConnection conn = peersSockets.get(peerId);
             // float downloadRate = conn.previousIntervalDownloadRate();
 
             // unchoke this neighbor
             if (conn.isChoked()) {
               conn.unchokeConnection();
-              newlyUnchoked.add(e)
             }
+            shouldBeUnchoked.put(peerId, true);
           }
-
         }
 
+        // now choke the neighbors that are not in unchoked
+        for (int i = 0; i < currentlyUnchoked.size(); i++) {
+          Integer peerId = currentlyUnchoked.get(i);
+          if (shouldBeUnchoked.containsKey(peerId) == false) {
+            // this peer is unchoked but it shouldnt be, choke it
+            PeerConnection conn = peersSockets.get(peerId);
+            conn.chokeConnection();
+          }
+        }
+        resetDownloadRates();
       }
     };
 
@@ -117,7 +126,6 @@ public class ConnectionHandler {
   public void updateNotInterested() {
     // when a new piece is received, go through neighbors and see if interested pieces > 0
     for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
-      // Integer port = entry.getKey();
       PeerConnection conn = entry.getValue();
 
       if (conn.isChoked() == false
@@ -143,20 +151,22 @@ public class ConnectionHandler {
     timer.scheduleAtFixedRate(task, 0, delay);
   }
 
-  // return a sorted list of socket numbers of the peers that have the highest
-  // upload rate
-  // public Vector<Integer> getDownloadRates() {
-  // }
+  public void resetDownloadRates() {
+    for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
+      PeerConnection conn = entry.getValue();
+      conn.newUnchokingInterval();
+    }
+  }
 
   public Vector<Integer> getInterestedPeers() {
     Vector<Integer> interestedPeers = new Vector<>();
     System.out.println("Int: " + peersSockets.entrySet());
     for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
-      Integer port = entry.getKey();
+      Integer peerId = entry.getKey();
       PeerConnection conn = entry.getValue();
 
       if (conn.otherPeerInterested) {
-        interestedPeers.add(port);
+        interestedPeers.add(peerId);
       }
     }
     return interestedPeers;
@@ -166,11 +176,11 @@ public class ConnectionHandler {
   public Vector<Integer> getUnchokedPeers() {
     Vector<Integer> unchokedPeers = new Vector<>();
     for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
-      Integer port = entry.getKey();
+      Integer peerId = entry.getKey();
       PeerConnection conn = entry.getValue();
 
       if (conn.isChoked() == false) {
-        unchokedPeers.add(port);
+        unchokedPeers.add(peerId);
       }
     }
     return unchokedPeers;

@@ -167,6 +167,7 @@ public class PeerConnection {
         int otherId = in.readInt();
         otherPeer.peerId = otherId;
         System.out.println("Got valid handshake from " + otherId);
+        ConnectionHandler.getInstance().savePeerSocket(otherId, this);
         sendBitfield();
       }
     } catch (IOException e) {
