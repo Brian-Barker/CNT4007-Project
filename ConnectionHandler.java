@@ -56,6 +56,9 @@ public class ConnectionHandler {
     int numPreferredNeighbors = Configs.getPreferredNeighbors();
     TimerTask task = new TimerTask() {
       public void run() {
+        Vector<Integer> currentlyUnchoked = getUnchokedPeers();
+        Vector<Integer> newlyUnchoked = new Vector<>();
+
         if (PeerConnection.localPeer.hasEntireFile) {
           // randomly choose from those interested
           Vector<Integer> interestedPeers = getInterestedPeers();
@@ -65,8 +68,11 @@ public class ConnectionHandler {
                 .limit(Math.min(interestedPeers.size(), numPreferredNeighbors)).forEach((index) -> {
                   Integer randomPort = interestedPeers.get(index);
                   PeerConnection randomPeer = peersSockets.get(randomPort);
-                  System.out.println("Unchoking peer " + randomPeer.otherPeer.peerId);
-                  randomPeer.unchokeConnection();
+                  if (randomPeer.isChoked()) {
+                    System.out.println("Unchoking peer " + randomPeer.otherPeer.peerId);
+                    randomPeer.unchokeConnection();
+                    newlyUnchoked.add(randomPort);
+                  }
                 });
           }
         } else {
@@ -93,6 +99,10 @@ public class ConnectionHandler {
             // float downloadRate = conn.previousIntervalDownloadRate();
 
             // unchoke this neighbor
+            if (conn.isChoked()) {
+              conn.unchokeConnection();
+              newlyUnchoked.add(e)
+            }
           }
 
         }
@@ -150,6 +160,20 @@ public class ConnectionHandler {
       }
     }
     return interestedPeers;
+  }
+
+  // TODO can use hash for this
+  public Vector<Integer> getUnchokedPeers() {
+    Vector<Integer> unchokedPeers = new Vector<>();
+    for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
+      Integer port = entry.getKey();
+      PeerConnection conn = entry.getValue();
+
+      if (conn.isChoked() == false) {
+        unchokedPeers.add(port);
+      }
+    }
+    return unchokedPeers;
   }
 
   public void close() {
