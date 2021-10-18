@@ -77,7 +77,7 @@ public class PeerProcess {
 	}
 	
 	public void initializePeerDirectory() {
-		File directory = new File("../peer_" + peerId);
+		File directory = new File("./peer_" + peerId);
 		if (!directory.exists()) {
 			directory.mkdir();
 		}
