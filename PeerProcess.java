@@ -30,6 +30,7 @@ public class PeerProcess {
 			// System.out.println(this.peerId + "r " + peer.peerId);
 			if (peer.peerId == this.peerId) {
 				setupLocalPeer(peer);
+				peer = peerInfo.get(i); // Check again in case the information was incorrect (and has been updated)
 				return;
 			}
 			System.out.println("connecting to " + peer.peerId + " as " + this.peerId);

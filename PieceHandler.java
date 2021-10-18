@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.io.*;
 
 /* 
   thread safe singleton instance to keep track of pieces that are downloaded
@@ -65,7 +66,8 @@ public class PieceHandler {
       this.fileData = Files.readAllBytes(Paths.get("./peer_" + peerId + "/" + this.fileName));
       this.bitfield.set(0, pieces, true);
     } catch (IOException e) {
-      System.out.println("E " + e);
+      System.out.println("File not found, updating peerInfo");
+	  handleMissingFile(peerId);
     }
   }
 
@@ -78,6 +80,37 @@ public class PieceHandler {
     }
 
     return Arrays.copyOfRange(fileData, byteStart, byteEnd + 1);
+  }
+  
+  private void handleMissingFile(int peerId) {
+	try {
+		List<String> lines = new ArrayList<String>();
+		String line = null;
+		File peerInfoFile = new File("./PeerInfo.cfg");
+		FileReader fr = new FileReader(peerInfoFile);
+		BufferedReader br = new BufferedReader(fr);
+		while((line = br.readLine()) != null) {
+			line.trim();
+			if (line.contains(String.valueOf(peerId))) {
+				line = line.substring(0, line.length()-1) + "0";
+			}
+			lines.add(line);
+		}
+		fr.close();
+		br.close();
+		
+		FileWriter fw = new FileWriter(f1);
+		BufferedWriter out = new BufferedWriter(fw);
+		for (String s : lines) {
+			out.write(s);
+		}
+		out.flush();
+		out.close();
+		fw.close();
+	} catch (Exception e) {
+		System.out.println("Error while updating peerInfo: " + e);
+	}
+	
   }
 
   // compares other peer bitset and sees if current peer should be interested
