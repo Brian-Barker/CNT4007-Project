@@ -1,4 +1,5 @@
 import java.util.*;
+import java.io.File;
 
 public class PeerProcess {
 	// private static final int port = 6008;
@@ -77,7 +78,7 @@ public class PeerProcess {
 	}
 	
 	public void initializePeerDirectory() {
-		File directory = new File("../peer_" + peerId);
+		File directory = new File("./peer_" + peerId);
 		if (!directory.exists()) {
 			directory.mkdir();
 		}
