@@ -63,7 +63,6 @@ public class PieceHandler {
 
     try {
       this.fileData = Files.readAllBytes(Paths.get(this.fileName));
-
       this.bitfield.set(0, pieces, true);
     } catch (IOException e) {
       System.out.println("E " + e);

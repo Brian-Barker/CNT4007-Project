@@ -44,7 +44,7 @@ public class ConnectionListener implements Runnable {
         ConnectionHandler.getInstance().savePeerSocket(port, peer);
       }
     } catch (IOException e) {
-
+	System.out.println(e);
     }
   }
 
