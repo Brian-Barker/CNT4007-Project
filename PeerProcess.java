@@ -81,6 +81,5 @@ public class PeerProcess {
 		if (!directory.exists()) {
 			directory.mkdir();
 		}
-		peerDirectory = directory;
 	}
 }
