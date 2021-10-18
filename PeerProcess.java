@@ -1,11 +1,11 @@
 import java.util.*;
+import java.io.File;
 
 public class PeerProcess {
 	// private static final int port = 6008;
 	private int peerId;
 	Map<String, String> commonConfig;
 	Vector<PeerInfo> peerInfo;
-	File peerDirectory;
 	// handle other peers that want to connect to us
 	ConnectionListener serverConnections;
 
@@ -40,7 +40,7 @@ public class PeerProcess {
 	public void setupLocalPeer(PeerInfo peer) {
 		PieceHandler.getInstance().initBitfield(commonConfig);
 		if (peer.hasEntireFile) {
-			PieceHandler.getInstance().loadFile();
+			PieceHandler.getInstance().loadFile(peerId);
 		}
 		PeerConnection.setLocalPeer(peer);
 		setupListening(peer);

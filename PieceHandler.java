@@ -58,11 +58,11 @@ public class PieceHandler {
     this.bitfield = new BitSet(bitfieldLength);
   }
 
-  public void loadFile() {
+  public void loadFile(int peerId) {
     System.out.println("Loading file");
 
     try {
-      this.fileData = Files.readAllBytes(Paths.get(this.fileName));
+      this.fileData = Files.readAllBytes(Paths.get("./peer_" + peerId + this.fileName));
       this.bitfield.set(0, pieces, true);
     } catch (IOException e) {
       System.out.println("E " + e);
