@@ -90,7 +90,7 @@ public class PieceHandler {
 		while((line = br.readLine()) != null) {
 			line.trim();
 			if (line.contains(String.valueOf(peerId))) {
-				line = line.substring(0, line.length()-2) + "0";
+				line = line.substring(0, line.length()-1) + "0";
 			}
 			lines.add(line + "\n");
 		}
