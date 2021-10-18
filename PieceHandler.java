@@ -42,9 +42,9 @@ public class PieceHandler {
   }
 
   public void initBitfield() {
-    String fileName = Configs.commonConfig.get("FileName");
-    int fileSize = Integer.parseInt(Configs.commonConfig.get("FileSize"));
-    int pieceSize = Integer.parseInt(Configs.commonConfig.get("PieceSize"));
+    String fileName = Configs.getFileName();
+    int fileSize = Configs.getFileSize();
+    int pieceSize = Configs.getPieceSize();
 
     int pieces = (int) Math.ceil((float) fileSize / (float) pieceSize);
 
@@ -76,7 +76,7 @@ public class PieceHandler {
     this.fileData = new byte[fileSize];
   }
 
-  public boolean setPieceData(int pieceIndex, byte[] pieceData) {
+  public boolean handleNewPieceData(int pieceIndex, byte[] pieceData) {
     System.out.println("Got piece data. Index: " + pieceIndex + " of length " + pieceData.length);
 
     int byteIndex = pieceIndex * pieceSize;

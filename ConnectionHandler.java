@@ -1,6 +1,9 @@
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.sql.Date;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -19,6 +22,7 @@ public class ConnectionHandler {
   // these are shared among all threads
   private ServerSocket serverSocket;
   private Map<Integer, PeerConnection> peersSockets = new HashMap<>();
+  private Integer currentOptimisticallyUnchokedNeighbor = 0;
 
   private ConnectionHandler() {
   }
@@ -49,7 +53,7 @@ public class ConnectionHandler {
   }
 
   public void determinePreferredNeighbors() {
-    int numPreferredNeighbors = Integer.parseInt(Configs.commonConfig.get("NumberOfPreferredNeighbors"));
+    int numPreferredNeighbors = Configs.getPreferredNeighbors();
     TimerTask task = new TimerTask() {
       public void run() {
         if (PeerConnection.localPeer.hasEntireFile) {
@@ -57,7 +61,6 @@ public class ConnectionHandler {
           Vector<Integer> interestedPeers = getInterestedPeers();
           System.out.println("Got int " + interestedPeers.size());
           if (interestedPeers.size() > 0) {
-            System.out.println("Int " + interestedPeers.size() + " ");
             ThreadLocalRandom.current().ints(0, interestedPeers.size()).distinct()
                 .limit(Math.min(interestedPeers.size(), numPreferredNeighbors)).forEach((index) -> {
                   Integer randomPort = interestedPeers.get(index);
@@ -66,12 +69,38 @@ public class ConnectionHandler {
                   randomPeer.unchokeConnection();
                 });
           }
+        } else {
+          // calculate download rates
+          Vector<Integer> interestedPeers = getInterestedPeers();
+
+          Collections.sort(interestedPeers, new Comparator<Integer>() {
+
+            @Override
+            public int compare(Integer p1, Integer p2) {
+              PeerConnection peer1 = peersSockets.get(p1);
+              PeerConnection peer2 = peersSockets.get(p2);
+              float peer1DownloadRate = peer1.previousIntervalDownloadRate();
+              float peer2DownloadRate = peer2.previousIntervalDownloadRate();
+
+              return Float.compare(peer1DownloadRate, peer2DownloadRate);
+            }
+          });
+
+          int numNeighbors = Math.min(interestedPeers.size(), Configs.getPreferredNeighbors());
+          for (int i = 0; i < numNeighbors; i++) {
+            Integer port = interestedPeers.get(i);
+            PeerConnection conn = peersSockets.get(port);
+            // float downloadRate = conn.previousIntervalDownloadRate();
+
+            // unchoke this neighbor
+          }
+
         }
 
       }
     };
 
-    int p = Integer.parseInt(Configs.commonConfig.get("UnchokingInterval"));
+    float p = Configs.getUnchokingInterval();
     beginRepeatedTimer(task, p);
   }
 
@@ -94,13 +123,13 @@ public class ConnectionHandler {
       }
     };
 
-    int p = Integer.parseInt(Configs.commonConfig.get("OptimisticUnchokingInterval"));
+    float p = Configs.getOptimisticUnchokingInterval();
     beginRepeatedTimer(task, p);
   }
 
-  private void beginRepeatedTimer(TimerTask task, int seconds) {
+  private void beginRepeatedTimer(TimerTask task, float seconds) {
     Timer timer = new Timer("Timer");
-    long delay = seconds * 1000L;
+    long delay = (long) seconds * 1000L;
     timer.scheduleAtFixedRate(task, 0, delay);
   }
 

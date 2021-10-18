@@ -21,6 +21,9 @@ public class PeerConnection {
   // TODO dont forget, this properly is not always be set
   public Bitfield otherPeerBitfield;
   public boolean otherPeerInterested = false;
+  // download rate info
+  private int piecesReceivedPreviousInterval = 0;
+
   // output steam is the data to send to the other peer
   private DataOutputStream out;
   // input stream is the data coming in from the other peer
@@ -176,6 +179,9 @@ public class PeerConnection {
     if (PieceHandler.getInstance().shouldBeInterested(otherPeerBitfield)) {
       interestedInOtherPeer = true;
       sendMessage(TYPE_INTERESTED, EMPTY_BYTES);
+    } else {
+      interestedInOtherPeer = false;
+      sendMessage(TYPE_NOT_INTERESTED, EMPTY_BYTES);
     }
   }
 
@@ -185,11 +191,11 @@ public class PeerConnection {
   }
 
   public void readPiece(int pieceIndex, byte[] payload) {
-    if (PieceHandler.getInstance().setPieceData(pieceIndex, payload) == false) {
+    boolean gotAllPieces = PieceHandler.getInstance().handleNewPieceData(pieceIndex, payload);
+    if (gotAllPieces == false) {
       // still more pieces needed
       sendRequestMessage();
     }
-
   }
 
   private void sendMessage(byte messageType, byte[] payload) {
@@ -207,6 +213,16 @@ public class PeerConnection {
     } catch (IOException e) {
       System.out.println("Error sending " + e);
     }
+  }
+
+  public float previousIntervalDownloadRate() {
+    float interval = Configs.getUnchokingInterval();
+    return ((float) piecesReceivedPreviousInterval * (float) Configs.getPieceSize()) / interval;
+  }
+
+  public void newUnchokingInterval() {
+    // reset the download rates
+    piecesReceivedPreviousInterval = 0;
   }
 
   private byte[] prefixBytesWithInt(int num, byte[] data) {

@@ -5,15 +5,16 @@ import java.util.Vector;
 import java.io.FileReader;
 
 public class Configs {
-  
-  public static Map<String, String> commonConfig;
-	public static Vector<PeerInfo> peerInfo;
 
-  public static void loadConfigs(){
-		commonConfig = Configs.getCommonConfig("Common.cfg");
+  public static Map<String, String> commonConfig;
+  public static Vector<PeerInfo> peerInfo;
+
+  public static void loadConfigs() {
+    commonConfig = Configs.getCommonConfig("Common.cfg");
     //common.forEach((key, value) -> System.out.println(key + ":" + value));
-		peerInfo = Configs.getPeerList("PeerInfo.cfg");
+    peerInfo = Configs.getPeerList("PeerInfo.cfg");
   }
+
   private static Vector<PeerInfo> getPeerList(String filename) {
     Vector<PeerInfo> peerInfoVector = new Vector<PeerInfo>();
 
@@ -53,5 +54,29 @@ public class Configs {
       System.out.println(ex.toString());
     }
     return configMap;
+  }
+
+  public static int getPreferredNeighbors() {
+    return Integer.parseInt(Configs.commonConfig.get("NumberOfPreferredNeighbors"));
+  }
+
+  public static float getUnchokingInterval() {
+    return Float.parseFloat(Configs.commonConfig.get("UnchokingInterval"));
+  }
+
+  public static float getOptimisticUnchokingInterval() {
+    return Float.parseFloat(Configs.commonConfig.get("OptimisticUnchokingInterval"));
+  }
+
+  public static String getFileName() {
+    return Configs.commonConfig.get("FileName");
+  }
+
+  public static int getFileSize() {
+    return Integer.parseInt(Configs.commonConfig.get("FileSize"));
+  }
+
+  public static int getPieceSize() {
+    return Integer.parseInt(Configs.commonConfig.get("PieceSize"));
   }
 }
