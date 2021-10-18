@@ -97,7 +97,7 @@ public class PieceHandler {
 		fr.close();
 		br.close();
 		
-		FileWriter fw = new FileWriter(f1);
+		FileWriter fw = new FileWriter(peerInfoFile);
 		BufferedWriter out = new BufferedWriter(fw);
 		for (String s : lines) {
 			out.write(s);
