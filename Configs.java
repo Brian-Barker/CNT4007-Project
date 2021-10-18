@@ -4,9 +4,17 @@ import java.util.Map;
 import java.util.Vector;
 import java.io.FileReader;
 
-public class ConfigReader {
+public class Configs {
+  
+  public static Map<String, String> commonConfig;
+	public static Vector<PeerInfo> peerInfo;
 
-  public static Vector<PeerInfo> getPeerList(String filename) {
+  public static void loadConfigs(){
+		commonConfig = Configs.getCommonConfig("Common.cfg");
+    //common.forEach((key, value) -> System.out.println(key + ":" + value));
+		peerInfo = Configs.getPeerList("PeerInfo.cfg");
+  }
+  private static Vector<PeerInfo> getPeerList(String filename) {
     Vector<PeerInfo> peerInfoVector = new Vector<PeerInfo>();
 
     try {
@@ -29,7 +37,7 @@ public class ConfigReader {
     return peerInfoVector;
   }
 
-  public static Map<String, String> getCommonConfig(String filename) {
+  private static Map<String, String> getCommonConfig(String filename) {
     Map<String, String> configMap = new HashMap<String, String>();
 
     try {

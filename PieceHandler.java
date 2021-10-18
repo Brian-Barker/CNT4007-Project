@@ -2,10 +2,9 @@ import java.util.*;
 
 import java.io.IOException;
 import java.lang.Math;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.io.*;
 
 /* 
@@ -18,11 +17,14 @@ public class PieceHandler {
 
   // these are shared among all threads
   private byte[] fileData;
-  private BitSet bitfield;
+  private Bitfield bitfield;
+  // the pieces that we have requested for in the above bitset
+  public Bitfield requested;
   int pieceSize = 0;
   int fileSize = 0;
   String fileName = "";
   int pieces = 0;
+  int piecesDownloaded = 0;
 
   private PieceHandler() {
   }
@@ -39,10 +41,10 @@ public class PieceHandler {
     return result;
   }
 
-  public void initBitfield(Map<String, String> config) {
-    String fileName = config.get("FileName");
-    int fileSize = Integer.parseInt(config.get("FileSize"));
-    int pieceSize = Integer.parseInt(config.get("PieceSize"));
+  public void initBitfield() {
+    String fileName = Configs.commonConfig.get("FileName");
+    int fileSize = Integer.parseInt(Configs.commonConfig.get("FileSize"));
+    int pieceSize = Integer.parseInt(Configs.commonConfig.get("PieceSize"));
 
     int pieces = (int) Math.ceil((float) fileSize / (float) pieceSize);
 
@@ -51,21 +53,45 @@ public class PieceHandler {
     this.pieceSize = pieceSize;
     this.pieces = pieces;
 
-    int spareBits = 0;// 8 - (pieces % 8);
-
-    int bitfieldLength = pieces + spareBits;
-    this.bitfield = new BitSet(bitfieldLength);
+    int bitfieldLength = pieces;
+    this.bitfield = new Bitfield(bitfieldLength);
+    this.requested = new Bitfield(bitfieldLength);
   }
 
-  public void loadFile(int peerId) {
+  public void loadFile() {
     System.out.println("Loading file");
 
     try {
-      this.fileData = Files.readAllBytes(Paths.get("./peer_" + peerId + "/" + this.fileName));
-      this.bitfield.set(0, pieces, true);
+      this.fileData = Files.readAllBytes(getFilePath());
+      this.bitfield.bitfield.set(0, pieces, true);
     } catch (IOException e) {
-      System.out.println("File not found, updating peerInfo");
-	  handleMissingFile(peerId);
+      System.out.println("File not found");
+      // I don't think we need to handle the case of missing file if there is a 1 in peerinfo
+      // I think we can assume if there is a 1 in PeerInfo, the file will exist
+      //handleMissingFile(peerId);
+    }
+  }
+
+  public void initEmptyBytes() {
+    this.fileData = new byte[fileSize];
+  }
+
+  public boolean setPieceData(int pieceIndex, byte[] pieceData) {
+    System.out.println("Got piece data. Index: " + pieceIndex + " of length " + pieceData.length);
+
+    int byteIndex = pieceIndex * pieceSize;
+    System.arraycopy(pieceData, 0, fileData, byteIndex, pieceData.length);
+    // TODO this assumes setPieceData is only called with unique pieceIndex's
+    piecesDownloaded += 1;
+    bitfield.setBit(pieceIndex);
+    ConnectionHandler.getInstance().updateNotInterested();
+
+    if (piecesDownloaded == pieces) {
+      // all done!
+      writeFile(fileData);
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -76,59 +102,78 @@ public class PieceHandler {
     if (byteEnd > fileSize) {
       byteEnd = fileSize - 1;
     }
-
+    System.out.println("Get " + byteStart + " to " + byteEnd + " size " + fileData.length + " piece " + pieceIndex);
     return Arrays.copyOfRange(fileData, byteStart, byteEnd + 1);
   }
-  
-  private void handleMissingFile(int peerId) {
-	try {
-		List<String> lines = new ArrayList<String>();
-		String line = null;
-		File peerInfoFile = new File("./PeerInfo.cfg");
-		FileReader fr = new FileReader(peerInfoFile);
-		BufferedReader br = new BufferedReader(fr);
-		while((line = br.readLine()) != null) {
-			line.trim();
-			if (line.contains(String.valueOf(peerId))) {
-				line = line.substring(0, line.length()-1) + "0";
-			}
-			lines.add(line + "\n");
-		}
-		fr.close();
-		br.close();
-		
-		FileWriter fw = new FileWriter(peerInfoFile);
-		BufferedWriter out = new BufferedWriter(fw);
-		for (String s : lines) {
-			out.write(s);
-		}
-		out.flush();
-		out.close();
-		fw.close();
-	} catch (Exception e) {
-		System.out.println("Error while updating peerInfo: " + e);
-	}
-	
+
+  public void writeFile(byte[] data) {
+    try {
+      System.out.println("WRITING FILE");
+      Files.write(getFilePath(), data);
+    } catch (IOException e) {
+      System.out.println("Error writing file " + e);
+    }
   }
 
-  // compares other peer bitset and sees if current peer should be interested
-  public boolean shouldBeInterested(BitSet otherPeerBitset) {
-    // bitset length retuns the position of the highest set bit
-    for (int i = 0; i < Math.max(bitfield.length(), otherPeerBitset.length()); i++) {
-      if (bitfield.get(i) == false && otherPeerBitset.get(i) == true) {
-        // other peer has this piece and we dont
-        return true;
+  public Vector<Integer> getRequestablePieces(Bitfield otherPeer) {
+    // select a random piece the other peer has and local peer does not and local has not requested yet
+    Vector<Integer> unreqs = new Vector<>();
+    for (int i = requested.bitfield.nextClearBit(0); i < pieces; i = requested.bitfield.nextClearBit(i + 1)) {
+      if (bitfield.hasBit(i) == false && otherPeer.hasBit(i)) {
+        unreqs.add(i);
       }
     }
-    return false;
+    return unreqs;
+  }
+
+  public boolean didRequestFor(int index) {
+    return requested.hasBit(index);
+  }
+
+  public boolean shouldBeInterested(Bitfield otherPeerBitfield) {
+    return bitfield.shouldBeInterested(otherPeerBitfield);
   }
 
   public byte[] bitfieldToByteArray() {
-    byte[] bitfieldBytes = bitfield.toByteArray();
-    return bitfieldBytes;
+    return bitfield.bitfieldToByteArray();
   }
 
   public int bitfieldCardinality() {
-    return bitfield.cardinality();
+    return bitfield.bitfieldCardinality();
+  }
+
+  private Path getFilePath() {
+    return Paths.get("./peer_" + PeerConnection.localPeer.peerId + "/" + this.fileName);
+  }
+
+  private void handleMissingFile(int peerId) {
+    try {
+      List<String> lines = new ArrayList<String>();
+      String line = null;
+      File peerInfoFile = new File("./PeerInfo.cfg");
+      FileReader fr = new FileReader(peerInfoFile);
+      BufferedReader br = new BufferedReader(fr);
+      while ((line = br.readLine()) != null) {
+        line.trim();
+        if (line.contains(String.valueOf(peerId))) {
+          line = line.substring(0, line.length() - 1) + "0";
+        }
+        lines.add(line + "\n");
+      }
+      fr.close();
+      br.close();
+
+      FileWriter fw = new FileWriter(peerInfoFile);
+      BufferedWriter out = new BufferedWriter(fw);
+      for (String s : lines) {
+        out.write(s);
+      }
+      out.flush();
+      out.close();
+      fw.close();
+    } catch (Exception e) {
+      System.out.println("Error while updating peerInfo: " + e);
+    }
+
   }
 }

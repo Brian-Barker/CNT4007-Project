@@ -42,9 +42,10 @@ public class ConnectionListener implements Runnable {
         System.out.println("Accepting client " + port);
         PeerConnection peer = new PeerConnection(client, port);
         ConnectionHandler.getInstance().savePeerSocket(port, peer);
+        peer.initializeConnection();
       }
     } catch (IOException e) {
-	System.out.println(e);
+      System.out.println(e);
     }
   }
 
@@ -57,6 +58,7 @@ public class ConnectionListener implements Runnable {
         System.out.println("Connecting to " + port + " from " + peerInfo.peerId + " " + peerInfo.peerPort);
         PeerConnection peer = new PeerConnection(clientSocket, peerInfo);
         ConnectionHandler.getInstance().savePeerSocket(port, peer);
+        peer.initializeConnection();
       } else {
         System.out.println("Already exists " + port);
       }

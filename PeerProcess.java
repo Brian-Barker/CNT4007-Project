@@ -4,8 +4,7 @@ import java.io.File;
 public class PeerProcess {
 	// private static final int port = 6008;
 	private int peerId;
-	Map<String, String> commonConfig;
-	Vector<PeerInfo> peerInfo;
+
 	// handle other peers that want to connect to us
 	ConnectionListener serverConnections;
 
@@ -15,22 +14,19 @@ public class PeerProcess {
 
 	public void start(int id) {
 		this.peerId = id;
-		commonConfig = ConfigReader.getCommonConfig("Common.cfg");
+		Configs.loadConfigs();
 		initializePeerDirectory();
-		// common.forEach((key, value) -> System.out.println(key + ":" + value));
-		peerInfo = ConfigReader.getPeerList("PeerInfo.cfg");
-
 		connectToPreviousPeers();
 		joinThreads();
 	}
 
 	public void connectToPreviousPeers() {
-		for (int i = 0; i < peerInfo.size(); i++) {
-			PeerInfo peer = peerInfo.get(i);
+		for (int i = 0; i < Configs.peerInfo.size(); i++) {
+			PeerInfo peer = Configs.peerInfo.get(i);
 			// System.out.println(this.peerId + "r " + peer.peerId);
 			if (peer.peerId == this.peerId) {
 				setupLocalPeer(peer);
-				peer = peerInfo.get(i); // Check again in case the information was incorrect (and has been updated)
+				peer = Configs.peerInfo.get(i); // Check again in case the information was incorrect (and has been updated)
 				return;
 			}
 			System.out.println("connecting to " + peer.peerId + " as " + this.peerId);
@@ -39,12 +35,17 @@ public class PeerProcess {
 	}
 
 	public void setupLocalPeer(PeerInfo peer) {
-		PieceHandler.getInstance().initBitfield(commonConfig);
-		if (peer.hasEntireFile) {
-			PieceHandler.getInstance().loadFile(peerId);
-		}
 		PeerConnection.setLocalPeer(peer);
+
+		PieceHandler.getInstance().initBitfield();
+		if (peer.hasEntireFile) {
+			PieceHandler.getInstance().loadFile();
+		} else {
+			PieceHandler.getInstance().initEmptyBytes();
+		}
 		setupListening(peer);
+		ConnectionHandler.getInstance().determinePreferredNeighbors();
+		ConnectionHandler.getInstance().optimisticallyUnchoke();
 	}
 
 	public void joinThreads() {
@@ -76,7 +77,7 @@ public class PeerProcess {
 		t1.start();
 		clientThreads.addElement(t1);
 	}
-	
+
 	public void initializePeerDirectory() {
 		File directory = new File("./peer_" + peerId);
 		if (!directory.exists()) {
