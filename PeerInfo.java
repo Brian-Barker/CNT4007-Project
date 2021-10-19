@@ -13,10 +13,10 @@ public class PeerInfo {
     hasEntireFile = hasFile;
   }
 
-  public PeerInfo(int pPort) {
+  public PeerInfo() {
     peerId = 0;
     peerAddress = "";
-    peerPort = pPort;
+    peerPort = 0;
     hasEntireFile = false;
   }
 }

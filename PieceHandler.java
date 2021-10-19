@@ -143,7 +143,7 @@ public class PieceHandler {
   }
 
   private Path getFilePath() {
-    return Paths.get("./peer_" + PeerConnection.localPeer.peerId + "/" + this.fileName);
+    return Paths.get("./peer_" + ConnectionHandler.getInstance().localPeer.peerId + "/" + this.fileName);
   }
 
   private void handleMissingFile(int peerId) {

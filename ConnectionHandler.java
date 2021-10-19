@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.sql.Date;
 import java.util.Collection;
 import java.util.Collections;
@@ -20,6 +21,7 @@ public class ConnectionHandler {
   private static Object mutex = new Object();
 
   // these are shared among all threads
+  public PeerInfo localPeer;
   private ServerSocket serverSocket;
   private Map<Integer, PeerConnection> peersSockets = new HashMap<>();
   private Integer currentOptimisticallyUnchokedNeighbor = 0;
@@ -39,13 +41,21 @@ public class ConnectionHandler {
     return result;
   }
 
+  public Thread createNewConnection(Socket socket) {
+    ConnectionListener clientConnection = new ConnectionListener();
+    clientConnection.connectionFromExistingSocket(socket);
+    Thread t1 = new Thread(clientConnection);
+    t1.start();
+    return t1;
+  }
+
   public void setServerSocket(ServerSocket ss) {
     this.serverSocket = ss;
   }
 
-  public void savePeerSocket(int port, PeerConnection conn) {
+  public void savePeerSocket(int peerId, PeerConnection conn) {
     System.out.println("Saved " + peersSockets.keySet());
-    peersSockets.put(port, conn);
+    peersSockets.put(peerId, conn);
   }
 
   public boolean peerConnectionExists(int port) {
@@ -59,7 +69,7 @@ public class ConnectionHandler {
         Vector<Integer> currentlyUnchoked = getUnchokedPeers();
         Map<Integer, Boolean> shouldBeUnchoked = new HashMap<>();
 
-        if (PeerConnection.localPeer.hasEntireFile) {
+        if (ConnectionHandler.getInstance().localPeer.hasEntireFile) {
           // randomly choose from those interested
           Vector<Integer> interestedPeers = getInterestedPeers();
           System.out.println("Got int " + interestedPeers.size());
@@ -69,7 +79,7 @@ public class ConnectionHandler {
                   Integer randomId = interestedPeers.get(index);
                   PeerConnection randomPeer = peersSockets.get(randomId);
                   if (randomPeer.isChoked()) {
-                    System.out.println("Unchoking peer " + randomPeer.otherPeer.peerId);
+                    System.out.println("Unchoking peer " + randomPeer.otherPeerId);
                     randomPeer.unchokeConnection();
                   }
                   shouldBeUnchoked.put(randomId, true);
@@ -194,5 +204,9 @@ public class ConnectionHandler {
       serverSocket.close();
     } catch (IOException e) {
     }
+  }
+
+  public void setLocalPeer(PeerInfo p) {
+    ConnectionHandler.getInstance().localPeer = p;
   }
 }

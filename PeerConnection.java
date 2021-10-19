@@ -8,16 +8,15 @@ import java.util.Vector;
 // input stream to send to the client
 // socket
 public class PeerConnection {
-  public static PeerInfo localPeer;
 
   private Socket clientSocket;
 
   // if this is true, no more uploading
-  private boolean connectionChoked = false;
+  private boolean connectionChoked = true;
   private boolean interestedInOtherPeer = false;
 
   // other peer info
-  public PeerInfo otherPeer;
+  public int otherPeerId;
   // TODO dont forget, this properly is not always be set
   public Bitfield otherPeerBitfield;
   public boolean otherPeerInterested = false;
@@ -38,15 +37,9 @@ public class PeerConnection {
   private final byte TYPE_PIECE = 7;
   private final byte[] EMPTY_BYTES = new byte[] {};
 
-  PeerConnection(Socket client, PeerInfo otherPeer) {
-    this.clientSocket = client;
-    this.otherPeer = otherPeer;
-  }
-
   // for when another peer connects and we dont have the entire peer info
-  PeerConnection(Socket client, int port) {
+  PeerConnection(Socket client) {
     this.clientSocket = client;
-    this.otherPeer = new PeerInfo(port);
   }
 
   public void initializeConnection() {
@@ -64,19 +57,20 @@ public class PeerConnection {
     readHandshake();
     try {
       while (true) {
-        System.out.println("Starting to listen");
+        System.out.print("--");
         int rawLength = in.readInt();
         byte type = in.readByte();
         int payloadLength = rawLength - 1;
         if (type == TYPE_UNCHOKE) {
+          System.out.println("Got unchoke from " + otherPeerId);
           sendRequestMessage();
         }
         if (type == TYPE_INTERESTED) {
-          System.out.println("Got interested from " + otherPeer.peerId);
+          System.out.println("Got interested from " + otherPeerId);
           otherPeerInterested = true;
         }
         if (type == TYPE_NOT_INTERESTED) {
-          System.out.println("Got not interested from " + otherPeer.peerId);
+          System.out.println("Got not interested from " + otherPeerId);
           otherPeerInterested = false;
         }
         if (type == TYPE_BITFIELD) {
@@ -148,7 +142,7 @@ public class PeerConnection {
   public void sendHandshake() {
     String header = "P2PFILESHARINGPROJ";
     String empty10Bytes = "\u0000".repeat(10);
-    int peerId = PeerConnection.localPeer.peerId;
+    int peerId = ConnectionHandler.getInstance().localPeer.peerId;
     byte[] handshake = ByteBuffer.allocate(32).put(header.getBytes()).put(empty10Bytes.getBytes()).putInt(peerId)
         .array();
     System.out.println("Sending handshake as " + peerId);
@@ -165,7 +159,7 @@ public class PeerConnection {
       if (header.equals("P2PFILESHARINGPROJ")) {
         in.readNBytes(10); // the empty 10 bytes of 0
         int otherId = in.readInt();
-        otherPeer.peerId = otherId;
+        this.otherPeerId = otherId;
         System.out.println("Got valid handshake from " + otherId);
         ConnectionHandler.getInstance().savePeerSocket(otherId, this);
         sendBitfield();
@@ -259,7 +253,4 @@ public class PeerConnection {
     }
   }
 
-  public static void setLocalPeer(PeerInfo p) {
-    PeerConnection.localPeer = p;
-  }
 }

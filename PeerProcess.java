@@ -1,21 +1,23 @@
 import java.util.*;
 import java.io.File;
+import java.io.IOException;
+import java.net.Socket;
 
 public class PeerProcess {
-	// private static final int port = 6008;
 	private int peerId;
 
 	// handle other peers that want to connect to us
-	ConnectionListener serverConnections;
+	AcceptHandler serverConnections;
 
 	// unknown if we need to keep track of the threads
-	Thread serverThread;
-	Vector<Thread> clientThreads = new Vector<Thread>();
+	static Thread serverThread;
+	static Vector<Thread> clientThreads = new Vector<Thread>();
 
 	public void start(int id) {
 		this.peerId = id;
 		Configs.loadConfigs();
 		initializePeerDirectory();
+		setupLocalPeer();
 		connectToPreviousPeers();
 		joinThreads();
 	}
@@ -25,8 +27,7 @@ public class PeerProcess {
 			PeerInfo peer = Configs.peerInfo.get(i);
 			// System.out.println(this.peerId + "r " + peer.peerId);
 			if (peer.peerId == this.peerId) {
-				setupLocalPeer(peer);
-				peer = Configs.peerInfo.get(i); // Check again in case the information was incorrect (and has been updated)
+				// peer = Configs.peerInfo.get(i); // Check again in case the information was incorrect (and has been updated)
 				return;
 			}
 			System.out.println("connecting to " + peer.peerId + " as " + this.peerId);
@@ -34,25 +35,31 @@ public class PeerProcess {
 		}
 	}
 
-	public void setupLocalPeer(PeerInfo peer) {
-		PeerConnection.setLocalPeer(peer);
+	public void setupLocalPeer() {
+		for (int i = 0; i < Configs.peerInfo.size(); i++) {
+			PeerInfo peer = Configs.peerInfo.get(i);
+			if (peer.peerId == this.peerId) {
+				ConnectionHandler.getInstance().setLocalPeer(peer);
+				break;
+			}
+		}
 
 		PieceHandler.getInstance().initBitfield();
-		if (peer.hasEntireFile) {
+		if (ConnectionHandler.getInstance().localPeer.hasEntireFile) {
 			PieceHandler.getInstance().loadFile();
 		} else {
 			PieceHandler.getInstance().initEmptyBytes();
 		}
-		setupListening(peer);
+		setupListening();
 		ConnectionHandler.getInstance().determinePreferredNeighbors();
 		ConnectionHandler.getInstance().optimisticallyUnchoke();
 	}
 
 	public void joinThreads() {
 		try {
-			serverThread.join();
+			PeerProcess.serverThread.join();
 			for (int i = 0; i < clientThreads.size(); i++) {
-				clientThreads.get(i).join();
+				PeerProcess.clientThreads.get(i).join();
 			}
 		} catch (InterruptedException e) {
 			System.out.println(e);
@@ -60,22 +67,27 @@ public class PeerProcess {
 	}
 
 	// done once
-	public void setupListening(PeerInfo thisPeer) {
-		serverConnections = new ConnectionListener();
-		serverConnections.peerInfo = thisPeer;
-		serverConnections.server = true;
-		serverThread = new Thread(serverConnections);
-		serverThread.start();
+	public void setupListening() {
+		serverConnections = new AcceptHandler();
+		serverConnections.port = ConnectionHandler.getInstance().localPeer.peerPort;
+		PeerProcess.serverThread = new Thread(serverConnections);
+		PeerProcess.serverThread.start();
 	}
 
 	// done per client to connect to
 	public void connectToPeer(PeerInfo peerInfo) {
-		ConnectionListener clientConnection = new ConnectionListener();
-		clientConnection.peerInfo = peerInfo;
-		clientConnection.server = false;
-		Thread t1 = new Thread(clientConnection);
-		t1.start();
-		clientThreads.addElement(t1);
+		try {
+			String address = peerInfo.peerAddress;
+			int port = peerInfo.peerPort;
+			// TODO properly deal with if the socket already exists
+			// the peerInfo is the peer to connect to
+			Socket clientSocket = new Socket(address, port);
+			Thread clientThread = ConnectionHandler.getInstance().createNewConnection(clientSocket);
+			PeerProcess.clientThreads.add(clientThread);
+		} catch (IOException e) {
+
+		}
+
 	}
 
 	public void initializePeerDirectory() {
