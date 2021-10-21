@@ -182,6 +182,17 @@ public class ConnectionHandler {
     return interestedPeers;
   }
 
+  public void sendHavesToAllOtherPeers(int peerIdToNotSendTo, int pieceIndex) {
+    for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
+      // Integer peerId = entry.getKey();
+      PeerConnection conn = entry.getValue();
+
+      if (conn.otherPeerId != peerIdToNotSendTo) {
+        conn.sendHave(pieceIndex);
+      }
+    }
+  }
+
   // TODO can use hash for this
   public Vector<Integer> getUnchokedPeers() {
     Vector<Integer> unchokedPeers = new Vector<>();

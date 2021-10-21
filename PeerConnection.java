@@ -32,6 +32,7 @@ public class PeerConnection {
   private final byte TYPE_UNCHOKE = 1;
   private final byte TYPE_INTERESTED = 2;
   private final byte TYPE_NOT_INTERESTED = 3;
+  private final byte TYPE_HAVE = 4;
   private final byte TYPE_BITFIELD = 5;
   private final byte TYPE_REQUEST = 6;
   private final byte TYPE_PIECE = 7;
@@ -61,6 +62,10 @@ public class PeerConnection {
         int rawLength = in.readInt();
         byte type = in.readByte();
         int payloadLength = rawLength - 1;
+        if (type == TYPE_CHOKE) {
+          // TODO is this enough?
+          connectionChoked = true;
+        }
         if (type == TYPE_UNCHOKE) {
           System.out.println("Got unchoke from " + otherPeerId);
           sendRequestMessage();
@@ -72,6 +77,10 @@ public class PeerConnection {
         if (type == TYPE_NOT_INTERESTED) {
           System.out.println("Got not interested from " + otherPeerId);
           otherPeerInterested = false;
+        }
+        if (type == TYPE_HAVE) {
+          int receivedIndex = in.readInt();
+
         }
         if (type == TYPE_BITFIELD) {
           byte[] payload = in.readNBytes(payloadLength);
@@ -95,6 +104,43 @@ public class PeerConnection {
     }
   }
 
+  public void sendHandshake() {
+    String header = "P2PFILESHARINGPROJ";
+    String empty10Bytes = "\u0000".repeat(10);
+    int peerId = ConnectionHandler.getInstance().localPeer.peerId;
+    byte[] handshake = ByteBuffer.allocate(32).put(header.getBytes()).put(empty10Bytes.getBytes()).putInt(peerId)
+        .array();
+    System.out.println("Sending handshake as " + peerId);
+
+    try {
+      out.write(handshake);
+    } catch (IOException e) {
+    }
+  }
+
+  public void chokeConnection() {
+    sendMessage(TYPE_CHOKE, EMPTY_BYTES);
+    connectionChoked = true;
+  }
+
+  public void unchokeConnection() {
+    sendMessage(TYPE_UNCHOKE, EMPTY_BYTES);
+    connectionChoked = false;
+  }
+
+  public void sendInterested() {
+    sendMessage(TYPE_INTERESTED, EMPTY_BYTES);
+  }
+
+  public void sendNotInterested() {
+    sendMessage(TYPE_NOT_INTERESTED, EMPTY_BYTES);
+  }
+
+  public void sendHave(int pieceIndex) {
+    byte[] pieceIndexBytes = intToByteArray(pieceIndex);
+    sendMessage(TYPE_HAVE, pieceIndexBytes);
+  }
+
   public void sendBitfield() {
     // only send bitfield if we have at least one pieces
     if (PieceHandler.getInstance().bitfieldCardinality() > 0) {
@@ -116,41 +162,12 @@ public class PeerConnection {
       // no more interesting pieces from this peer
       // maybe this is handled elsewhere (uninterested)
     }
-
   }
 
   public void sendPiece(int pieceIndex) {
     byte[] pieceData = PieceHandler.getInstance().getPieceData(pieceIndex);
     byte[] message = prefixBytesWithInt(pieceIndex, pieceData);
     sendMessage(TYPE_PIECE, message);
-  }
-
-  public void sendNotInterested() {
-    sendMessage(TYPE_NOT_INTERESTED, EMPTY_BYTES);
-  }
-
-  public void chokeConnection() {
-    sendMessage(TYPE_CHOKE, EMPTY_BYTES);
-    connectionChoked = true;
-  }
-
-  public void unchokeConnection() {
-    sendMessage(TYPE_UNCHOKE, EMPTY_BYTES);
-    connectionChoked = false;
-  }
-
-  public void sendHandshake() {
-    String header = "P2PFILESHARINGPROJ";
-    String empty10Bytes = "\u0000".repeat(10);
-    int peerId = ConnectionHandler.getInstance().localPeer.peerId;
-    byte[] handshake = ByteBuffer.allocate(32).put(header.getBytes()).put(empty10Bytes.getBytes()).putInt(peerId)
-        .array();
-    System.out.println("Sending handshake as " + peerId);
-
-    try {
-      out.write(handshake);
-    } catch (IOException e) {
-    }
   }
 
   public void readHandshake() {
@@ -168,16 +185,15 @@ public class PeerConnection {
     }
   }
 
+  public void readHave(int pieceIndex) {
+    otherPeerBitfield.setBit(pieceIndex);
+    handleShouldBeInterested();
+  }
+
   public void readBitfield(byte[] payload) {
     System.out.println("Got bitfield " + Arrays.toString(payload));
     otherPeerBitfield = new Bitfield(payload);
-    if (PieceHandler.getInstance().shouldBeInterested(otherPeerBitfield)) {
-      interestedInOtherPeer = true;
-      sendMessage(TYPE_INTERESTED, EMPTY_BYTES);
-    } else {
-      interestedInOtherPeer = false;
-      sendMessage(TYPE_NOT_INTERESTED, EMPTY_BYTES);
-    }
+    handleShouldBeInterested();
   }
 
   public void readRequest(int pieceIndex) {
@@ -188,6 +204,7 @@ public class PeerConnection {
   public void readPiece(int pieceIndex, byte[] payload) {
     boolean gotAllPieces = PieceHandler.getInstance().handleNewPieceData(pieceIndex, payload);
     if (gotAllPieces == false) {
+      ConnectionHandler.getInstance().sendHavesToAllOtherPeers(otherPeerId, pieceIndex);
       // still more pieces needed
       sendRequestMessage();
     }
@@ -218,6 +235,19 @@ public class PeerConnection {
   public void newUnchokingInterval() {
     // reset the download rates
     piecesReceivedPreviousInterval = 0;
+  }
+
+  public void handleShouldBeInterested() {
+    boolean shouldBeInterested = PieceHandler.getInstance().shouldBeInterested(otherPeerBitfield);
+    if (shouldBeInterested && interestedInOtherPeer == false) {
+      interestedInOtherPeer = true;
+      sendInterested();
+    } else {
+      if (interestedInOtherPeer == true) {
+        interestedInOtherPeer = false;
+        sendNotInterested();
+      }
+    }
   }
 
   private byte[] prefixBytesWithInt(int num, byte[] data) {
