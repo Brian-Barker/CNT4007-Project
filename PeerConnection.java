@@ -207,6 +207,7 @@ public class PeerConnection {
       ConnectionHandler.getInstance().sendHavesToAllOtherPeers(otherPeerId, pieceIndex);
       // still more pieces needed
       sendRequestMessage();
+
     }
   }
 
@@ -239,14 +240,12 @@ public class PeerConnection {
 
   public void handleShouldBeInterested() {
     boolean shouldBeInterested = PieceHandler.getInstance().shouldBeInterested(otherPeerBitfield);
-    if (shouldBeInterested && interestedInOtherPeer == false) {
+    if (shouldBeInterested && shouldBeInterested == !interestedInOtherPeer) {
       interestedInOtherPeer = true;
       sendInterested();
-    } else {
-      if (interestedInOtherPeer == true) {
-        interestedInOtherPeer = false;
-        sendNotInterested();
-      }
+    } else if (!shouldBeInterested && shouldBeInterested == !interestedInOtherPeer) {
+      interestedInOtherPeer = false;
+      sendNotInterested();
     }
   }
 

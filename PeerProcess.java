@@ -15,6 +15,7 @@ public class PeerProcess {
 
 	public void start(int id) {
 		this.peerId = id;
+		Logger.SetupLogger(id);
 		Configs.loadConfigs();
 		initializePeerDirectory();
 		setupLocalPeer();
