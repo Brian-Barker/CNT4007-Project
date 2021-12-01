@@ -23,11 +23,11 @@ public class ConnectionListener implements Runnable {
     }
   }
 
-  public void connectionFromExistingSocket(Socket socket) {
+  public void connectionFromExistingSocket(Socket socket, boolean connectionCreatedFromLocalPeer) {
     // for when the server accepts an incoming request
 
     // TODO properly deal with if the socket already exists
-    peer = new PeerConnection(socket);
+    peer = new PeerConnection(socket, connectionCreatedFromLocalPeer);
 
   }
 }

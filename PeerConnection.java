@@ -11,6 +11,9 @@ public class PeerConnection {
 
   private Socket clientSocket;
 
+  // for logging purposes, to know which peer started this connection
+  private boolean connectionCreatedFromLocalPeer = false;
+
   // if this is true, no more uploading
   private boolean connectionChoked = true;
   private boolean interestedInOtherPeer = false;
@@ -39,8 +42,9 @@ public class PeerConnection {
   private final byte[] EMPTY_BYTES = new byte[] {};
 
   // for when another peer connects and we dont have the entire peer info
-  PeerConnection(Socket client) {
+  PeerConnection(Socket client, boolean connectionCreatedFromLocalPeer) {
     this.clientSocket = client;
+    this.connectionCreatedFromLocalPeer = connectionCreatedFromLocalPeer;
   }
 
   public void initializeConnection() {
@@ -55,6 +59,8 @@ public class PeerConnection {
   }
 
   public void receiveMessage() {
+    int peerId = ConnectionHandler.getInstance().localPeer.peerId; // for logging
+
     readHandshake();
     try {
       while (true) {
@@ -65,22 +71,24 @@ public class PeerConnection {
         if (type == TYPE_CHOKE) {
           // TODO is this enough?
           connectionChoked = true;
+          Logger.LogChoking(peerId, otherPeerId);
         }
         if (type == TYPE_UNCHOKE) {
-          System.out.println("Got unchoke from " + otherPeerId);
+          Logger.LogUnchoking(peerId, otherPeerId);
           sendRequestMessage();
         }
         if (type == TYPE_INTERESTED) {
-          System.out.println("Got interested from " + otherPeerId);
+          Logger.LogReceiveInterested(peerId, otherPeerId);
           otherPeerInterested = true;
         }
         if (type == TYPE_NOT_INTERESTED) {
-          System.out.println("Got not interested from " + otherPeerId);
+          Logger.LogReceiveNotInterested(peerId, otherPeerId);
           otherPeerInterested = false;
         }
         if (type == TYPE_HAVE) {
           int receivedIndex = in.readInt();
-
+          readHave(receivedIndex);
+          Logger.LogReceiveHave(peerId, otherPeerId, receivedIndex);
         }
         if (type == TYPE_BITFIELD) {
           byte[] payload = in.readNBytes(payloadLength);
@@ -178,6 +186,14 @@ public class PeerConnection {
         int otherId = in.readInt();
         this.otherPeerId = otherId;
         System.out.println("Got valid handshake from " + otherId);
+
+        int peerId = ConnectionHandler.getInstance().localPeer.peerId;
+        if(connectionCreatedFromLocalPeer){
+          Logger.LogTCPConnection(peerId, otherId);
+        }else{
+          Logger.LogOtherPeerConnection(peerId, otherId);
+        }
+
         ConnectionHandler.getInstance().savePeerSocket(otherId, this);
         sendBitfield();
       }
@@ -188,6 +204,12 @@ public class PeerConnection {
   public void readHave(int pieceIndex) {
     otherPeerBitfield.setBit(pieceIndex);
     handleShouldBeInterested();
+    // TODO check if the other peer has every piece of the file
+    /*
+      if(){
+        Logger.LogDownloadComplete(otherPeerId);
+      }
+    */
   }
 
   public void readBitfield(byte[] payload) {
@@ -203,11 +225,19 @@ public class PeerConnection {
 
   public void readPiece(int pieceIndex, byte[] payload) {
     boolean gotAllPieces = PieceHandler.getInstance().handleNewPieceData(pieceIndex, payload);
+
+    int peerId = ConnectionHandler.getInstance().localPeer.peerId;
+    Logger.LogFinishDownloadingPiece(peerId, otherPeerId, pieceIndex, PieceHandler.getInstance().piecesDownloaded);
+
+    ConnectionHandler.getInstance().updateNotInterested();
+
     if (gotAllPieces == false) {
       ConnectionHandler.getInstance().sendHavesToAllOtherPeers(otherPeerId, pieceIndex);
       // still more pieces needed
       sendRequestMessage();
-
+    }else{
+      // we have all pieces
+      Logger.LogDownloadComplete(peerId);
     }
   }
 

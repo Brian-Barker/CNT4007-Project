@@ -83,7 +83,7 @@ public class PeerProcess {
 			// TODO properly deal with if the socket already exists
 			// the peerInfo is the peer to connect to
 			Socket clientSocket = new Socket(address, port);
-			Thread clientThread = ConnectionHandler.getInstance().createNewConnection(clientSocket);
+			Thread clientThread = ConnectionHandler.getInstance().createNewConnection(clientSocket, true);
 			PeerProcess.clientThreads.add(clientThread);
 		} catch (IOException e) {
 

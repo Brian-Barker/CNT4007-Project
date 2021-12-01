@@ -84,7 +84,6 @@ public class PieceHandler {
     // TODO this assumes setPieceData is only called with unique pieceIndex's
     piecesDownloaded += 1;
     bitfield.setBit(pieceIndex);
-    ConnectionHandler.getInstance().updateNotInterested();
 
     if (piecesDownloaded == pieces) {
       // all done!

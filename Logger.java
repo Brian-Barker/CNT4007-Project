@@ -17,12 +17,12 @@ public class Logger {
   }
 
   // log TCP connection message to file
-  public static void LogTCPConnection(int peerId, int otherPeer, String message) {
+  public static void LogTCPConnection(int peerId, int otherPeer) {
     Write(p(peerId)+" makes a connection to "+p(otherPeer));
   }
 
   // log other peer connection to this peer
-  public static void LogOtherPeerConnection(int peerId, int otherPeer, String message) {
+  public static void LogOtherPeerConnection(int peerId, int otherPeer) {
     Write(p(peerId)+" is connected from "+p(otherPeer));
   }
 

@@ -41,9 +41,9 @@ public class ConnectionHandler {
     return result;
   }
 
-  public Thread createNewConnection(Socket socket) {
+  public Thread createNewConnection(Socket socket, boolean connectionCreatedFromLocalPeer) {
     ConnectionListener clientConnection = new ConnectionListener();
-    clientConnection.connectionFromExistingSocket(socket);
+    clientConnection.connectionFromExistingSocket(socket, connectionCreatedFromLocalPeer);
     Thread t1 = new Thread(clientConnection);
     t1.start();
     return t1;
@@ -66,9 +66,9 @@ public class ConnectionHandler {
     int numPreferredNeighbors = Configs.getPreferredNeighbors();
     TimerTask task = new TimerTask() {
       public void run() {
-        Vector<Integer> currentlyUnchoked = getUnchokedPeers();
+        Vector<Integer> currentlyUnchoked = getPeersFromChokedState(false);
         Map<Integer, Boolean> shouldBeUnchoked = new HashMap<>();
-
+        
         if (ConnectionHandler.getInstance().localPeer.hasEntireFile) {
           // randomly choose from those interested
           Vector<Integer> interestedPeers = getInterestedPeers();
@@ -102,6 +102,8 @@ public class ConnectionHandler {
             }
           });
 
+          // interestedPeers is now sorted in descending order of download rates, so limit the number of preferred neighbors
+          // and choose the first N from the list
           int numNeighbors = Math.min(interestedPeers.size(), Configs.getPreferredNeighbors());
           for (int i = 0; i < numNeighbors; i++) {
             Integer peerId = interestedPeers.get(i);
@@ -115,6 +117,15 @@ public class ConnectionHandler {
             shouldBeUnchoked.put(peerId, true);
           }
         }
+
+        // For logging
+        Set<Integer> keys = shouldBeUnchoked.keySet();
+        int[] newPreferredNeighbors = new int[keys.size()];
+        int index = 0;
+        int localId = ConnectionHandler.getInstance().localPeer.peerId;
+        for(Integer element : keys) array[index++] = element.intValue();
+        Logger.LogPreferredNeighbors(localId, newPreferredNeighbors);
+
 
         // now choke the neighbors that are not in unchoked
         for (int i = 0; i < currentlyUnchoked.size(); i++) {
@@ -138,8 +149,7 @@ public class ConnectionHandler {
     for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
       PeerConnection conn = entry.getValue();
 
-      if (conn.isChoked() == false
-          && PieceHandler.getInstance().getRequestablePieces(conn.otherPeerBitfield).size() == 0) {
+      if (conn.isChoked() == false && PieceHandler.getInstance().getRequestablePieces(conn.otherPeerBitfield).size() == 0) {
         conn.sendNotInterested();
       }
     }
@@ -148,6 +158,32 @@ public class ConnectionHandler {
   public void optimisticallyUnchoke() {
     TimerTask task = new TimerTask() {
       public void run() {
+        // TODO verify if this is correct, this was made with heavy Copilot use at 5am
+
+        // get neighbors that are currently choked
+        Vector<Integer> currentlyChoked = getPeersFromChokedState(true);
+        // get neighbors that are currently interested in this peers pieces
+        Vector<Integer> interestedNeighbors = getInterestedPeers();
+        // get the elements that are in both vectors
+        Vector<Integer> intersection = new Vector<>();
+        for (int i = 0; i < currentlyChoked.size(); i++) {
+          Integer neighborId = currentlyChoked.get(i);
+          if (interestedNeighbors.contains(neighborId)) {
+            intersection.add(neighborId);
+          }
+        }
+        // randomly choose one of the elements from the intersection
+        if (intersection.size() > 0) {
+          int index = ThreadLocalRandom.current().nextInt(0, intersection.size());
+          Integer neighborId = intersection.get(index);
+          PeerConnection conn = peersSockets.get(neighborId);
+          conn.unchokeConnection();
+          currentOptimisticallyUnchokedNeighbor = neighborId;
+
+          int localId = ConnectionHandler.getInstance().localPeer.peerId;
+          Logger.LogOptimisticallyUnchokedNeighbor(localId, neighborId);
+        }
+
       }
     };
 
@@ -194,13 +230,13 @@ public class ConnectionHandler {
   }
 
   // TODO can use hash for this
-  public Vector<Integer> getUnchokedPeers() {
+  public Vector<Integer> getPeersFromChokedState(boolean isChoked) {
     Vector<Integer> unchokedPeers = new Vector<>();
     for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
       Integer peerId = entry.getKey();
       PeerConnection conn = entry.getValue();
 
-      if (conn.isChoked() == false) {
+      if (conn.isChoked() == isChoked) {
         unchokedPeers.add(peerId);
       }
     }
