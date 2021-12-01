@@ -40,7 +40,7 @@ public class Logger {
 
   // log change of optimistically unchoked neighbor
   public static void LogOptimisticallyUnchokedNeighbor(int peerId, int optimisticallyUnchokedNeighbor) {
-    Write(p(peerId, " has the optimistically unchoked neighbor " + p(optimisticallyUnchokedNeighbor)));
+    Write(p(peerId) + " has the optimistically unchoked neighbor " + p(optimisticallyUnchokedNeighbor));
   }
 
   // log unchoking of a neighbor
@@ -82,6 +82,7 @@ public class Logger {
     try {
       String message = getDateTime() + ": " + rawMessage + "\n";
       fileWriter.write(message);
+      fileWriter.flush();
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -91,18 +92,7 @@ public class Logger {
   public static String p(int peerId) {
     return "[" + peerId + "]";
   }
-
-  public static void log(String message) {
-    // get the current date and time
-    String dateTime = new java.util.Date().toString();
-    // log the message to file
-    try {
-      fileWriter.write(dateTime + ": " + message + "\n");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-
+  
   // get date time string
   public static String getDateTime() {
     // returns in format [yyyy-MM-dd HH:mm:ss]

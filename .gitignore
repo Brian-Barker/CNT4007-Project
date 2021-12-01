@@ -1,2 +1,3 @@
 *.class
 peer_*/
+*.log

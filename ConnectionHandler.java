@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -123,7 +124,7 @@ public class ConnectionHandler {
         int[] newPreferredNeighbors = new int[keys.size()];
         int index = 0;
         int localId = ConnectionHandler.getInstance().localPeer.peerId;
-        for(Integer element : keys) array[index++] = element.intValue();
+        for(Integer element : keys) newPreferredNeighbors[index++] = element.intValue();
         Logger.LogPreferredNeighbors(localId, newPreferredNeighbors);
 
 
