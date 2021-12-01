@@ -18,9 +18,9 @@ public class AcceptHandler implements Runnable {
       ConnectionHandler.getInstance().setServerSocket(serverSocket);
 
       while (true) {
-        System.out.println("Listening for client...");
+        Logger.Debug("Listening for client...");
         Socket client = serverSocket.accept();
-        System.out.println("Accepting client " + port);
+        Logger.Debug("Accepting client " + port);
         Thread thread = ConnectionHandler.getInstance().createNewConnection(client, false);
         PeerProcess.clientThreads.add(thread);
         // PeerConnection peer = new PeerConnection(client, port);

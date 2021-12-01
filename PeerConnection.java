@@ -116,9 +116,8 @@ public class PeerConnection {
     String header = "P2PFILESHARINGPROJ";
     String empty10Bytes = "\u0000".repeat(10);
     int peerId = ConnectionHandler.getInstance().localPeer.peerId;
-    byte[] handshake = ByteBuffer.allocate(32).put(header.getBytes()).put(empty10Bytes.getBytes()).putInt(peerId)
-        .array();
-    System.out.println("Sending handshake as " + peerId);
+    byte[] handshake = ByteBuffer.allocate(32).put(header.getBytes()).put(empty10Bytes.getBytes()).putInt(peerId).array();
+    Logger.Debug("Sending handshake as " + peerId);
 
     try {
       out.write(handshake);
@@ -153,7 +152,7 @@ public class PeerConnection {
     // only send bitfield if we have at least one pieces
     if (PieceHandler.getInstance().bitfieldCardinality() > 0) {
       byte[] bitfieldBytes = PieceHandler.getInstance().bitfieldToByteArray();
-      System.out.println("Sending bitfield");
+      Logger.Debug("Sending bitfield");
       sendMessage(TYPE_BITFIELD, bitfieldBytes);
     }
   }
@@ -161,7 +160,7 @@ public class PeerConnection {
   public void sendRequestMessage() {
     // select a random piece the other peer has and local peer does not and local has not requested yet
     Vector<Integer> interestingPieces = PieceHandler.getInstance().getRequestablePieces(otherPeerBitfield);
-    System.out.println("UNREQ " + interestingPieces.size());
+    Logger.Debug("UNREQ " + interestingPieces.size());
     if (interestingPieces.size() > 0) {
       Integer randomPiece = interestingPieces.get((int) (Math.random() * interestingPieces.size()));
       PieceHandler.getInstance().requested.setBit(randomPiece);
@@ -185,7 +184,7 @@ public class PeerConnection {
         in.readNBytes(10); // the empty 10 bytes of 0
         int otherId = in.readInt();
         this.otherPeerId = otherId;
-        System.out.println("Got valid handshake from " + otherId);
+        Logger.Debug("Got valid handshake from " + otherId);
 
         int peerId = ConnectionHandler.getInstance().localPeer.peerId;
         if(connectionCreatedFromLocalPeer){
@@ -196,25 +195,38 @@ public class PeerConnection {
 
         ConnectionHandler.getInstance().savePeerSocket(otherId, this);
         sendBitfield();
+
+        // this.otherPeerBitfield = new Bitfield(PieceHandler.getInstance().pieces);
+        // handleShouldBeInterested();
       }
     } catch (IOException e) {
     }
   }
 
   public void readHave(int pieceIndex) {
-    otherPeerBitfield.setBit(pieceIndex);
+    if(this.otherPeerBitfield == null){
+      //otherPeerBitfield = new BitSet(PieceHandler.getInstance().getBitfieldSize());
+      this.otherPeerBitfield = new Bitfield(PieceHandler.getInstance().pieces);
+      handleShouldBeInterested();
+    }
+    // initialize the other bitfield with all zeros first in case we dont get a bitfield message
+
+    this.otherPeerBitfield.setBit(pieceIndex);
     handleShouldBeInterested();
+
+    System.out.println("Received have from " + otherPeerId + " for piece " + pieceIndex+". Cardinality: "+otherPeerBitfield.bitfieldCardinality()+"/"+PieceHandler.getInstance().pieces);
     // TODO check if the other peer has every piece of the file
-    /*
-      if(){
-        Logger.LogDownloadComplete(otherPeerId);
-      }
-    */
+    if(this.otherPeerBitfield.bitfieldCardinality() == PieceHandler.getInstance().pieces){
+      Logger.LogDownloadComplete(otherPeerId);
+      // only need to consider closing everything if there is a change in the number of peers that have the complete file
+      ConnectionHandler.getInstance().terminateConnectionIfNeeded();
+    }
+    
   }
 
   public void readBitfield(byte[] payload) {
-    System.out.println("Got bitfield " + Arrays.toString(payload));
-    otherPeerBitfield = new Bitfield(payload);
+    Logger.Debug("Got bitfield " + Arrays.toString(payload));
+    this.otherPeerBitfield = new Bitfield(payload);
     handleShouldBeInterested();
   }
 
@@ -228,11 +240,11 @@ public class PeerConnection {
 
     int peerId = ConnectionHandler.getInstance().localPeer.peerId;
     Logger.LogFinishDownloadingPiece(peerId, otherPeerId, pieceIndex, PieceHandler.getInstance().piecesDownloaded);
+    ConnectionHandler.getInstance().sendHavesToAllOtherPeers(pieceIndex);
 
     ConnectionHandler.getInstance().updateNotInterested();
 
     if (gotAllPieces == false) {
-      ConnectionHandler.getInstance().sendHavesToAllOtherPeers(otherPeerId, pieceIndex);
       // still more pieces needed
       sendRequestMessage();
     }else{
@@ -254,7 +266,7 @@ public class PeerConnection {
     try {
       out.write(message);
     } catch (IOException e) {
-      System.out.println("Error sending " + e);
+      Logger.Debug("Error sending " + e);
     }
   }
 

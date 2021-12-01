@@ -31,7 +31,7 @@ public class PeerProcess {
 				// peer = Configs.peerInfo.get(i); // Check again in case the information was incorrect (and has been updated)
 				return;
 			}
-			System.out.println("connecting to " + peer.peerId + " as " + this.peerId);
+			Logger.Debug("connecting to " + peer.peerId + " as " + this.peerId);
 			connectToPeer(peer);
 		}
 	}

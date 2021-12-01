@@ -55,7 +55,7 @@ public class ConnectionHandler {
   }
 
   public void savePeerSocket(int peerId, PeerConnection conn) {
-    System.out.println("Saved " + peersSockets.keySet());
+    Logger.Debug("Saved " + peersSockets.keySet());
     peersSockets.put(peerId, conn);
   }
 
@@ -73,14 +73,14 @@ public class ConnectionHandler {
         if (ConnectionHandler.getInstance().localPeer.hasEntireFile) {
           // randomly choose from those interested
           Vector<Integer> interestedPeers = getInterestedPeers();
-          System.out.println("Got int " + interestedPeers.size());
+          Logger.Debug("Got int " + interestedPeers.size());
           if (interestedPeers.size() > 0) {
             ThreadLocalRandom.current().ints(0, interestedPeers.size()).distinct()
                 .limit(Math.min(interestedPeers.size(), numPreferredNeighbors)).forEach((index) -> {
                   Integer randomId = interestedPeers.get(index);
                   PeerConnection randomPeer = peersSockets.get(randomId);
                   if (randomPeer.isChoked()) {
-                    System.out.println("Unchoking peer " + randomPeer.otherPeerId);
+                    Logger.Debug("Unchoking peer " + randomPeer.otherPeerId);
                     randomPeer.unchokeConnection();
                   }
                   shouldBeUnchoked.put(randomId, true);
@@ -106,6 +106,7 @@ public class ConnectionHandler {
           // interestedPeers is now sorted in descending order of download rates, so limit the number of preferred neighbors
           // and choose the first N from the list
           int numNeighbors = Math.min(interestedPeers.size(), Configs.getPreferredNeighbors());
+          System.out.println("Num neighbors TO UNCHOKE: " + numNeighbors);
           for (int i = 0; i < numNeighbors; i++) {
             Integer peerId = interestedPeers.get(i);
             PeerConnection conn = peersSockets.get(peerId);
@@ -189,7 +190,38 @@ public class ConnectionHandler {
     };
 
     float p = Configs.getOptimisticUnchokingInterval();
-    beginRepeatedTimer(task, p);
+    //beginRepeatedTimer(task, p);
+  }
+
+  // if all of the peers have the entire file, terminate the connection
+  public boolean terminateConnectionIfNeeded() {
+    if (allPeersHaveAllPieces()) {
+      for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
+        PeerConnection conn = entry.getValue();
+        //conn.close();
+        System.out.println("Closing connection to peer IT HAS ALL PIECES " + conn.otherPeerId);
+        Logger.LogPeerDisconnected(localPeer.peerId, conn.otherPeerId);
+      }
+      return true;
+    }
+    return false;
+
+
+
+  }
+
+  //function to check if all the peers have all pieces downloaded
+  public boolean allPeersHaveAllPieces() {
+    for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
+      PeerConnection conn = entry.getValue();
+      System.out.println("OTHER CARD: "+conn.otherPeerId+" null: "+(conn.otherPeerBitfield == null));
+      if (conn.otherPeerBitfield == null || conn.otherPeerBitfield.bitfieldCardinality() < PieceHandler.getInstance().pieces) {
+        if(conn.otherPeerBitfield != null)
+          System.out.println(" has "+conn.otherPeerBitfield.bitfieldCardinality());
+        return false;
+      }
+    }
+    return true;
   }
 
   private void beginRepeatedTimer(TimerTask task, float seconds) {
@@ -207,7 +239,7 @@ public class ConnectionHandler {
 
   public Vector<Integer> getInterestedPeers() {
     Vector<Integer> interestedPeers = new Vector<>();
-    System.out.println("Int: " + peersSockets.entrySet());
+    Logger.Debug("Int: " + peersSockets.entrySet());
     for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
       Integer peerId = entry.getKey();
       PeerConnection conn = entry.getValue();
@@ -219,14 +251,15 @@ public class ConnectionHandler {
     return interestedPeers;
   }
 
-  public void sendHavesToAllOtherPeers(int peerIdToNotSendTo, int pieceIndex) {
+  public void sendHavesToAllOtherPeers(int pieceIndex) {
     for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
       // Integer peerId = entry.getKey();
       PeerConnection conn = entry.getValue();
 
-      if (conn.otherPeerId != peerIdToNotSendTo) {
+      Logger.Debug("Sending have to: " + conn.otherPeerId+" for piece "+pieceIndex);
+      // if (conn.otherPeerId != peerIdToNotSendTo) {
         conn.sendHave(pieceIndex);
-      }
+      // }
     }
   }
 

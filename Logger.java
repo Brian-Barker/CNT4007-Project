@@ -78,9 +78,15 @@ public class Logger {
     Write(p(peerId) + " has downloaded the complete file.");
   }
 
+  // not in spec
+  public static void LogPeerDisconnected(int peerId, int otherPeer) {
+    Write(p(peerId)+" disconnected from "+p(otherPeer));
+  }
+
   public static void Write(String rawMessage) {
     try {
       String message = getDateTime() + ": " + rawMessage + "\n";
+      System.out.print(message);
       fileWriter.write(message);
       fileWriter.flush();
     } catch (IOException e) {
@@ -88,11 +94,17 @@ public class Logger {
     }
   }
 
+  public static void Debug(String rawMessage) {
+    if (false) {
+      System.out.println(rawMessage);
+    }
+  }
+
   // helper to format peer id string
   public static String p(int peerId) {
     return "[" + peerId + "]";
   }
-  
+
   // get date time string
   public static String getDateTime() {
     // returns in format [yyyy-MM-dd HH:mm:ss]

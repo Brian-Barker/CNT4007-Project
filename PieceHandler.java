@@ -59,13 +59,13 @@ public class PieceHandler {
   }
 
   public void loadFile() {
-    System.out.println("Loading file");
+    Logger.Debug("Loading file");
 
     try {
       this.fileData = Files.readAllBytes(getFilePath());
       this.bitfield.bitfield.set(0, pieces, true);
     } catch (IOException e) {
-      System.out.println("File not found");
+      Logger.Debug("File not found");
       // I don't think we need to handle the case of missing file if there is a 1 in peerinfo
       // I think we can assume if there is a 1 in PeerInfo, the file will exist
       //handleMissingFile(peerId);
@@ -77,7 +77,7 @@ public class PieceHandler {
   }
 
   public boolean handleNewPieceData(int pieceIndex, byte[] pieceData) {
-    System.out.println("Got piece data. Index: " + pieceIndex + " of length " + pieceData.length);
+    Logger.Debug("Got piece data. Index: " + pieceIndex + " of length " + pieceData.length);
 
     int byteIndex = pieceIndex * pieceSize;
     System.arraycopy(pieceData, 0, fileData, byteIndex, pieceData.length);
@@ -101,16 +101,16 @@ public class PieceHandler {
     if (byteEnd > fileSize) {
       byteEnd = fileSize - 1;
     }
-    System.out.println("Get " + byteStart + " to " + byteEnd + " size " + fileData.length + " piece " + pieceIndex);
+    Logger.Debug("Get " + byteStart + " to " + byteEnd + " size " + fileData.length + " piece " + pieceIndex);
     return Arrays.copyOfRange(fileData, byteStart, byteEnd + 1);
   }
 
   public void writeFile(byte[] data) {
     try {
-      System.out.println("WRITING FILE");
+      Logger.Debug("WRITING FILE");
       Files.write(getFilePath(), data);
     } catch (IOException e) {
-      System.out.println("Error writing file " + e);
+      Logger.Debug("Error writing file " + e);
     }
   }
 
