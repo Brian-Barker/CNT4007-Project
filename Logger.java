@@ -18,110 +18,78 @@ public class Logger {
 
   // log TCP connection message to file
   public static void LogTCPConnection(int peerId, int otherPeer, String message) {
-    try {
-      fileWriter.write(getDateTime() + ": Peer " + peerId + ": makes a connection to Peer " + otherPeer + "\n");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    Write(p(peerId)+" makes a connection to "+p(otherPeer));
   }
 
   // log other peer connection to this peer
   public static void LogOtherPeerConnection(int peerId, int otherPeer, String message) {
-    try {
-      fileWriter.write(getDateTime() + ": Peer " + peerId + " is connected from Peer " + otherPeer + "\n");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    Write(p(peerId)+" is connected from "+p(otherPeer));
   }
 
   // log the change of preferred neighbors
   public static void LogPreferredNeighbors(int peerId, int[] preferredNeighbors) {
-    try {
-      fileWriter.write(getDateTime() + ": Peer " + peerId + " has preferred neighbors ");
-      for (int i = 0; i < preferredNeighbors.length; i++) {
-        fileWriter.write(preferredNeighbors[i] + ",");
+    String preferredNeighborsString = " has preferred neighbors ";
+    for (int i = 0; i < preferredNeighbors.length; i++) {
+      preferredNeighborsString += preferredNeighbors[i];
+      if (i != preferredNeighbors.length - 1) {
+        preferredNeighborsString += ",";
       }
-      fileWriter.write("\n");
-    } catch (IOException e) {
-      e.printStackTrace();
     }
+    Write(p(peerId)+preferredNeighborsString);
   }
 
   // log change of optimistically unchoked neighbor
   public static void LogOptimisticallyUnchokedNeighbor(int peerId, int optimisticallyUnchokedNeighbor) {
-    try {
-      fileWriter.write(getDateTime() + ": Peer " + peerId + " has the optimistically unchoked neighbor "
-          + optimisticallyUnchokedNeighbor + "\n");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    Write(p(peerId, " has the optimistically unchoked neighbor " + p(optimisticallyUnchokedNeighbor)));
   }
 
   // log unchoking of a neighbor
   public static void LogUnchoking(int peerId, int neighbor) {
-    try {
-      fileWriter.write(getDateTime() + ": Peer " + peerId + " is unchoked by " + neighbor + "\n");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    Write(p(peerId) + " is unchoked by " + p(neighbor));
   }
 
   // log choking of a neighbor
   public static void LogChoking(int peerId, int neighbor) {
-    try {
-      fileWriter.write(getDateTime() + ": Peer " + peerId + " is choked by " + neighbor + "\n");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    Write(p(peerId) + " is choked by " + p(neighbor));
   }
 
   // log receiving have message
   public static void LogReceiveHave(int peerId, int otherPeer, int pieceIndex) {
-    try {
-      fileWriter.write(getDateTime() + ": Peer " + peerId + " received the 'have' message from " + otherPeer
-          + " for piece " + pieceIndex + "\n");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    Write(p(peerId) + " received a 'have' message from " + p(otherPeer) + " for piece " + pieceIndex);
   }
 
   // receive interested message
   public static void LogReceiveInterested(int peerId, int otherPeer) {
-    try {
-      fileWriter
-          .write(getDateTime() + ": Peer " + peerId + " received the 'interested' message from " + otherPeer + "\n");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    Write(p(peerId) + " received the 'interested' message from " + p(otherPeer));
   }
 
   // receive not interested message
   public static void LogReceiveNotInterested(int peerId, int otherPeer) {
-    try {
-      fileWriter.write(
-          getDateTime() + ": Peer " + peerId + " received the 'not interested' message from " + otherPeer + "\n");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    Write(p(peerId) + " received the 'not interested' message from " + p(otherPeer));
   }
 
   // log finishing downloading a piece
   public static void LogFinishDownloadingPiece(int peerId, int otherPeer, int pieceIndex, int totalPieces) {
+    Write(p(peerId) + "has downloaded the piece " + pieceIndex + " from " + p(otherPeer) + ". Now the number of pieces it has is " + totalPieces);
+  }
+
+  // log completion of download
+  public static void LogDownloadComplete(int peerId) {
+    Write(p(peerId) + " has downloaded the complete file.");
+  }
+
+  public static void Write(String rawMessage) {
     try {
-      fileWriter.write(getDateTime() + ": Peer " + peerId + " has downloaded the piece " + pieceIndex + " from "
-          + otherPeer + ". Now the number of pieces it has is " + totalPieces + "\n");
+      String message = getDateTime() + ": " + rawMessage + "\n";
+      fileWriter.write(message);
     } catch (IOException e) {
       e.printStackTrace();
     }
   }
 
-  // log completion of download
-  public static void LogDownloadComplete(int peerId) {
-    try {
-      fileWriter.write(getDateTime() + ": Peer " + peerId + " has downloaded the complete file\n");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+  // helper to format peer id string
+  public static String p(int peerId) {
+    return "[" + peerId + "]";
   }
 
   public static void log(String message) {
@@ -133,24 +101,6 @@ public class Logger {
     } catch (IOException e) {
       e.printStackTrace();
     }
-  }
-
-  public static void log(String message, Object... args) {
-    System.out.println(String.format(message, args));
-  }
-
-  public static void log(Throwable t) {
-    t.printStackTrace();
-  }
-
-  public static void log(Throwable t, String message) {
-    System.out.println(message);
-    t.printStackTrace();
-  }
-
-  public static void log(Throwable t, String message, Object... args) {
-    System.out.println(String.format(message, args));
-    t.printStackTrace();
   }
 
   // get date time string
