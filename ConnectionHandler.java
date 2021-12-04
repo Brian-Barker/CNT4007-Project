@@ -139,6 +139,7 @@ public class ConnectionHandler {
           }
         }
         resetDownloadRates();
+        ConnectionHandler.getInstance().terminateConnectionIfNeeded();
       }
     };
 
@@ -198,16 +199,14 @@ public class ConnectionHandler {
     if (allPeersHaveAllPieces()) {
       for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
         PeerConnection conn = entry.getValue();
-        //conn.close();
+        conn.close();
         System.out.println("Closing connection to peer IT HAS ALL PIECES " + conn.otherPeerId);
         Logger.LogPeerDisconnected(localPeer.peerId, conn.otherPeerId);
       }
+      // TODO: Close all threads the stop this program
       return true;
     }
     return false;
-
-
-
   }
 
   //function to check if all the peers have all pieces downloaded
@@ -263,7 +262,6 @@ public class ConnectionHandler {
     }
   }
 
-  // TODO can use hash for this
   public Vector<Integer> getPeersFromChokedState(boolean isChoked) {
     Vector<Integer> unchokedPeers = new Vector<>();
     for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {

@@ -20,7 +20,7 @@ public class PeerConnection {
 
   // other peer info
   public int otherPeerId;
-  // TODO dont forget, this properly is not always be set
+
   public Bitfield otherPeerBitfield;
   public boolean otherPeerInterested = false;
   // download rate info
@@ -214,12 +214,12 @@ public class PeerConnection {
     this.otherPeerBitfield.setBit(pieceIndex);
     handleShouldBeInterested();
 
-    System.out.println("Received have from " + otherPeerId + " for piece " + pieceIndex+". Cardinality: "+otherPeerBitfield.bitfieldCardinality()+"/"+PieceHandler.getInstance().pieces);
-    // TODO check if the other peer has every piece of the file
+    Logger.Debug("Received have from " + otherPeerId + " for piece " + pieceIndex+". Cardinality: "+otherPeerBitfield.bitfieldCardinality()+"/"+PieceHandler.getInstance().pieces);
+
     if(this.otherPeerBitfield.bitfieldCardinality() == PieceHandler.getInstance().pieces){
       Logger.LogDownloadComplete(otherPeerId);
       // only need to consider closing everything if there is a change in the number of peers that have the complete file
-      ConnectionHandler.getInstance().terminateConnectionIfNeeded();
+      // ConnectionHandler.getInstance().terminateConnectionIfNeeded();
     }
     
   }
