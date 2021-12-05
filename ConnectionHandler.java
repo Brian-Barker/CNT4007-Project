@@ -204,7 +204,7 @@ public class ConnectionHandler {
         Logger.LogPeerDisconnected(localPeer.peerId, conn.otherPeerId);
       }
       // TODO: Close all threads the stop this program
-      System.out.println("closing ")
+      System.out.println("closing process");
       System.exit(0);
 
       return true;
