@@ -3,7 +3,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 
-public class PeerProcess {
+public class peerProcess {
 	private int peerId;
 
 	// handle other peers that want to connect to us
@@ -12,6 +12,22 @@ public class PeerProcess {
 	// unknown if we need to keep track of the threads
 	static Thread serverThread;
 	static Vector<Thread> clientThreads = new Vector<Thread>();
+
+	public static void main(String args[]) {
+		try {
+			String peerId = args[0];
+
+			if (!peerId.matches("\\d\\d\\d\\d")) {
+				throw new Exception("Error: Invalid peerId: " + peerId);
+			}
+
+			// start the peer with the valid peer id
+			peerProcess peer = new peerProcess();
+			peer.start(Integer.parseInt(peerId));
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
+  	}
 
 	public void start(int id) {
 		this.peerId = id;
@@ -58,9 +74,9 @@ public class PeerProcess {
 
 	public void joinThreads() {
 		try {
-			PeerProcess.serverThread.join();
+			peerProcess.serverThread.join();
 			for (int i = 0; i < clientThreads.size(); i++) {
-				PeerProcess.clientThreads.get(i).join();
+				peerProcess.clientThreads.get(i).join();
 			}
 		} catch (InterruptedException e) {
 			System.out.println(e);
@@ -71,8 +87,8 @@ public class PeerProcess {
 	public void setupListening() {
 		serverConnections = new AcceptHandler();
 		serverConnections.port = ConnectionHandler.getInstance().localPeer.peerPort;
-		PeerProcess.serverThread = new Thread(serverConnections);
-		PeerProcess.serverThread.start();
+		peerProcess.serverThread = new Thread(serverConnections);
+		peerProcess.serverThread.start();
 	}
 
 	// done per client to connect to
@@ -84,7 +100,7 @@ public class PeerProcess {
 			// the peerInfo is the peer to connect to
 			Socket clientSocket = new Socket(address, port);
 			Thread clientThread = ConnectionHandler.getInstance().createNewConnection(clientSocket, true);
-			PeerProcess.clientThreads.add(clientThread);
+			peerProcess.clientThreads.add(clientThread);
 		} catch (IOException e) {
 
 		}

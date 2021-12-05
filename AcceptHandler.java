@@ -22,7 +22,7 @@ public class AcceptHandler implements Runnable {
         Socket client = serverSocket.accept();
         Logger.Debug("Accepting client " + port);
         Thread thread = ConnectionHandler.getInstance().createNewConnection(client, false);
-        PeerProcess.clientThreads.add(thread);
+        peerProcess.clientThreads.add(thread);
         // PeerConnection peer = new PeerConnection(client, port);
         // peer.initializeConnection();
       }
