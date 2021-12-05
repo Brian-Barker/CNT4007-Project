@@ -191,7 +191,7 @@ public class ConnectionHandler {
     };
 
     float p = Configs.getOptimisticUnchokingInterval();
-    //beginRepeatedTimer(task, p);
+    beginRepeatedTimer(task, p);
   }
 
   // if all of the peers have the entire file, terminate the connection
@@ -204,6 +204,9 @@ public class ConnectionHandler {
         Logger.LogPeerDisconnected(localPeer.peerId, conn.otherPeerId);
       }
       // TODO: Close all threads the stop this program
+      System.out.println("closing ")
+      System.exit(0);
+
       return true;
     }
     return false;
@@ -211,6 +214,8 @@ public class ConnectionHandler {
 
   //function to check if all the peers have all pieces downloaded
   public boolean allPeersHaveAllPieces() {
+    if(peersSockets.entrySet().size() == 0) return false;
+
     for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
       PeerConnection conn = entry.getValue();
       System.out.println("OTHER CARD: "+conn.otherPeerId+" null: "+(conn.otherPeerBitfield == null));
