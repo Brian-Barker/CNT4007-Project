@@ -70,7 +70,7 @@ public class Logger {
 
   // log finishing downloading a piece
   public static void LogFinishDownloadingPiece(int peerId, int otherPeer, int pieceIndex, int totalPieces) {
-    Write(p(peerId) + "has downloaded the piece " + pieceIndex + " from " + p(otherPeer) + ". Now the number of pieces it has is " + totalPieces);
+    Write(p(peerId) + " has downloaded the piece " + pieceIndex + " from " + p(otherPeer) + ". Now the number of pieces it has is " + totalPieces);
   }
 
   // log completion of download
@@ -80,7 +80,7 @@ public class Logger {
 
   // not in spec
   public static void LogPeerDisconnected(int peerId, int otherPeer) {
-    Write(p(peerId)+" disconnected from "+p(otherPeer));
+    Write(p(peerId)+" disconnected from "+p(otherPeer) + ". Peer terminated.");
   }
 
   public static void Write(String rawMessage) {
