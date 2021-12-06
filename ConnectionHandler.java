@@ -85,7 +85,7 @@ public class ConnectionHandler {
                   }
                   shouldBeUnchoked.put(randomId, true);
                 });
-          }
+          } 
         } else {
           // calculate download rates
           Vector<Integer> interestedPeers = getInterestedPeers();
@@ -152,7 +152,7 @@ public class ConnectionHandler {
     for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
       PeerConnection conn = entry.getValue();
 
-      if (conn.isChoked() == false && PieceHandler.getInstance().getRequestablePieces(conn.otherPeerBitfield).size() == 0) {
+      if (PieceHandler.getInstance().getRequestablePieces(conn.otherPeerBitfield).size() == 0) {
         conn.sendNotInterested();
       }
     }
@@ -214,7 +214,9 @@ public class ConnectionHandler {
 
   //function to check if all the peers have all pieces downloaded
   public boolean allPeersHaveAllPieces() {
-    if(peersSockets.entrySet().size() == 0) return false;
+    if(peersSockets.entrySet().size() == 0) {
+      return false;
+    }
 
     if(!PieceHandler.getInstance().hasWritten) return false;
 
