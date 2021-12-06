@@ -102,9 +102,9 @@ public class peerProcess {
 			Thread clientThread = ConnectionHandler.getInstance().createNewConnection(clientSocket, true);
 			peerProcess.clientThreads.add(clientThread);
 		} catch (IOException e) {
-
+			System.out.println(e);
+			Logger.Write(e.toString());
 		}
-
 	}
 
 	public void initializePeerDirectory() {
