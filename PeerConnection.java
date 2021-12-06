@@ -17,7 +17,7 @@ public class PeerConnection {
 
   // if this is true, no more uploading
   private boolean connectionChoked = true;
-  private boolean interestedInOtherPeer = false;
+  public boolean interestedInOtherPeer = false;
 
   // other peer info
   public int otherPeerId;
@@ -77,6 +77,11 @@ public class PeerConnection {
         }
         if (type == TYPE_UNCHOKE) {
           Logger.LogUnchoking(peerId, otherPeerId);
+
+          // if (connectionChoked == false) {
+          //   sendMessage(TYPE_UNCHOKE, EMPTY_BYTES);
+          // }
+
           sendRequestMessage();
         }
         if (type == TYPE_INTERESTED) {
@@ -105,11 +110,11 @@ public class PeerConnection {
           }
         }
         if (type == TYPE_PIECE) {
-          if(connectionChoked == false){
+          //if(connectionChoked == false){
             int pieceIndex = in.readInt();
             byte[] payload = in.readNBytes(payloadLength - 4);
             readPiece(pieceIndex, payload);
-          }
+         // }
         }
       }
     } catch (IOException e) {
@@ -164,7 +169,7 @@ public class PeerConnection {
   public void sendRequestMessage() {
     // select a random piece the other peer has and local peer does not and local has not requested yet
     Vector<Integer> interestingPieces = PieceHandler.getInstance().getRequestablePieces(otherPeerBitfield);
-    Logger.Debug("UNREQ " + interestingPieces.size());
+    Logger.Write("UNREQ " + interestingPieces.size());
     if (interestingPieces.size() > 0) {
       Integer randomPiece = interestingPieces.get((int) (Math.random() * interestingPieces.size()));
       PieceHandler.getInstance().requested.setBit(randomPiece);
@@ -175,6 +180,8 @@ public class PeerConnection {
       }
       // add to requested buffer in PieceHandler
       PieceHandler.getInstance().requestedBuffer.get(otherPeerId).add(randomPiece);
+
+      Logger.Write("Requesting for piece " + randomPiece);
       
       sendMessage(TYPE_REQUEST, intToByteArray(randomPiece));
     } else {
@@ -343,6 +350,8 @@ public class PeerConnection {
         int pieceIndex = PieceHandler.getInstance().requestedBuffer.get(otherPeerId).get(i);
         PieceHandler.getInstance().requested.bitfield.clear(pieceIndex);
       }
+
+      PieceHandler.getInstance().requestedBuffer.get(otherPeerId).clear();
     }
   }
 

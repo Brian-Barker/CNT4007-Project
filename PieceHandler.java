@@ -42,6 +42,7 @@ public class PieceHandler {
   public boolean hasWritten = false;
 
   private PieceHandler() {
+    requestedBuffer = new HashMap<>();
   }
 
   public static PieceHandler getInstance() {

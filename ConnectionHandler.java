@@ -103,6 +103,11 @@ public class ConnectionHandler {
             }
           });
 
+          for(Integer i : interestedPeers) {
+            Logger.Write(i.toString());
+            Logger.Write("Peer: " + i.toString() + " Download rate: " + peersSockets.get(i).previousIntervalDownloadRate() + "");
+          }
+
           // interestedPeers is now sorted in descending order of download rates, so limit the number of preferred neighbors
           // and choose the first N from the list
           int numNeighbors = Math.min(interestedPeers.size(), Configs.getPreferredNeighbors());
@@ -144,13 +149,18 @@ public class ConnectionHandler {
     };
 
     float p = Configs.getUnchokingInterval();
-    beginRepeatedTimer(task, p);
+    beginRepeatedTimer(task, p, "preferred_neighbors");
   }
 
   public void updateNotInterested() {
     // when a new piece is received, go through neighbors and see if interested pieces > 0
     for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
       PeerConnection conn = entry.getValue();
+
+      if(conn.otherPeerBitfield == null){
+        //otherPeerBitfield = new BitSet(PieceHandler.getInstance().getBitfieldSize());
+        conn.otherPeerBitfield = new Bitfield(PieceHandler.getInstance().pieces);
+      }
 
       if (PieceHandler.getInstance().getRequestablePieces(conn.otherPeerBitfield).size() == 0) {
         conn.sendNotInterested();
@@ -159,8 +169,10 @@ public class ConnectionHandler {
   }
 
   public void optimisticallyUnchoke() {
+    Logger.Write("Reached optimistically unchoke");
     TimerTask task = new TimerTask() {
       public void run() {
+        Logger.Write("Inside optimistically unchoke task");
         // TODO verify if this is correct, this was made with heavy Copilot use at 5am
 
         // get neighbors that are currently choked
@@ -175,6 +187,7 @@ public class ConnectionHandler {
             intersection.add(neighborId);
           }
         }
+        
         // randomly choose one of the elements from the intersection
         if (intersection.size() > 0) {
           int index = ThreadLocalRandom.current().nextInt(0, intersection.size());
@@ -185,13 +198,26 @@ public class ConnectionHandler {
 
           int localId = ConnectionHandler.getInstance().localPeer.peerId;
           Logger.LogOptimisticallyUnchokedNeighbor(localId, neighborId);
+        } else {
+
+          Vector<Integer> interestedIn = getPeersInterestedIn();
+          if(interestedIn.size() > 0) {
+            int index = ThreadLocalRandom.current().nextInt(0, interestedIn.size());
+            Integer neighborId = interestedIn.get(index);
+            PeerConnection conn = peersSockets.get(neighborId);
+            conn.unchokeConnection();
+            currentOptimisticallyUnchokedNeighbor = neighborId;
+
+            int localId = ConnectionHandler.getInstance().localPeer.peerId;
+            Logger.LogOptimisticallyUnchokedNeighbor(localId, neighborId);
+          }
         }
 
       }
     };
 
     float p = Configs.getOptimisticUnchokingInterval();
-    beginRepeatedTimer(task, p);
+    beginRepeatedTimer(task, p, "optimistically_unchoke");
   }
 
   // if all of the peers have the entire file, terminate the connection
@@ -235,8 +261,8 @@ public class ConnectionHandler {
     return true;
   }
 
-  private void beginRepeatedTimer(TimerTask task, float seconds) {
-    Timer timer = new Timer("Timer");
+  private void beginRepeatedTimer(TimerTask task, float seconds, String name) {
+    Timer timer = new Timer(name);
     long delay = (long) seconds * 1000L;
     timer.scheduleAtFixedRate(task, 0, delay);
   }
@@ -256,6 +282,20 @@ public class ConnectionHandler {
       PeerConnection conn = entry.getValue();
 
       if (conn.otherPeerInterested) {
+        interestedPeers.add(peerId);
+      }
+    }
+    return interestedPeers;
+  }
+
+  public Vector<Integer> getPeersInterestedIn() {
+    Vector<Integer> interestedPeers = new Vector<>();
+    Logger.Debug("Int: " + peersSockets.entrySet());
+    for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
+      Integer peerId = entry.getKey();
+      PeerConnection conn = entry.getValue();
+
+      if (conn.interestedInOtherPeer) {
         interestedPeers.add(peerId);
       }
     }
