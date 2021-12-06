@@ -225,7 +225,7 @@ public class PeerConnection {
   }
 
   public void readBitfield(byte[] payload) {
-    Logger.Debug("Got bitfield " + Arrays.toString(payload));
+    //Logger.Debug("Got bitfield " + Arrays.toString(payload));
     this.otherPeerBitfield = new Bitfield(payload);
     handleShouldBeInterested();
   }

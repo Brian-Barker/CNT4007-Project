@@ -17,7 +17,7 @@ public class PieceHandler {
 
   // these are shared among all threads
   private byte[] fileData;
-  private Bitfield bitfield;
+  public Bitfield bitfield;
   // the pieces that we have requested for in the above bitset
   public Bitfield requested;
   int pieceSize = 0;
@@ -25,6 +25,7 @@ public class PieceHandler {
   String fileName = "";
   int pieces = 0;
   int piecesDownloaded = 0;
+  public boolean hasWritten = false;
 
   private PieceHandler() {
   }
@@ -64,6 +65,8 @@ public class PieceHandler {
     try {
       this.fileData = Files.readAllBytes(getFilePath());
       this.bitfield.bitfield.set(0, pieces, true);
+
+      hasWritten = true;
     } catch (IOException e) {
       Logger.Debug("File not found");
       // I don't think we need to handle the case of missing file if there is a 1 in peerinfo
@@ -86,6 +89,7 @@ public class PieceHandler {
     bitfield.setBit(pieceIndex);
 
     if (piecesDownloaded == pieces) {
+      hasWritten = true;
       // all done!
       writeFile(fileData);
       return true;

@@ -216,12 +216,17 @@ public class ConnectionHandler {
   public boolean allPeersHaveAllPieces() {
     if(peersSockets.entrySet().size() == 0) return false;
 
-    for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
+    if(!PieceHandler.getInstance().hasWritten) return false;
+
+    for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {  
       PeerConnection conn = entry.getValue();
+      //System.out.println("Other Peer ID: " + conn.otherPeerId + " Other peer bitfield: " + conn.otherPeerBitfield.bitfield.toString());
       System.out.println("OTHER CARD: "+conn.otherPeerId+" null: "+(conn.otherPeerBitfield == null));
       if (conn.otherPeerBitfield == null || conn.otherPeerBitfield.bitfieldCardinality() < PieceHandler.getInstance().pieces) {
         if(conn.otherPeerBitfield != null)
           System.out.println(" has "+conn.otherPeerBitfield.bitfieldCardinality());
+
+        //System.out.println("Other Peer ID: " + conn.otherPeerId + " Other peer bitfield: " + conn.otherPeerBitfield.bitfield.toString());
         return false;
       }
     }
