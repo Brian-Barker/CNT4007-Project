@@ -64,7 +64,7 @@ public class PeerConnection {
     readHandshake();
     try {
       while (true) {
-        System.out.print("--");
+        System.out.print("");
         int rawLength = in.readInt();
         byte type = in.readByte();
         int payloadLength = rawLength - 1;
@@ -207,7 +207,7 @@ public class PeerConnection {
     if(this.otherPeerBitfield == null){
       //otherPeerBitfield = new BitSet(PieceHandler.getInstance().getBitfieldSize());
       this.otherPeerBitfield = new Bitfield(PieceHandler.getInstance().pieces);
-      handleShouldBeInterested();
+      //handleShouldBeInterested();
     }
     // initialize the other bitfield with all zeros first in case we dont get a bitfield message
 
@@ -225,7 +225,7 @@ public class PeerConnection {
   }
 
   public void readBitfield(byte[] payload) {
-    //Logger.Debug("Got bitfield " + Arrays.toString(payload));
+    Logger.Debug("Got bitfield from "+otherPeerId);
     this.otherPeerBitfield = new Bitfield(payload);
     handleShouldBeInterested();
   }

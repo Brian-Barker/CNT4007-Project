@@ -96,7 +96,8 @@ public class Logger {
 
   public static void Debug(String rawMessage) {
     if (true) {
-      System.out.println(rawMessage);
+      // System.out.println(rawMessage);
+      Write(rawMessage);
     }
   }
 

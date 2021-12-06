@@ -2,6 +2,7 @@ default:
 	javac -d out *.java
 	javac -d project_config_file_large *.java
 	javac -d project_config_file_small *.java
+	javac -d large_local *.java
 
 clean:
 	rm ./project_config_file_large/*.class

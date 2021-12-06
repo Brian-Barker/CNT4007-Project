@@ -73,7 +73,7 @@ public class ConnectionHandler {
         if (ConnectionHandler.getInstance().localPeer.hasEntireFile) {
           // randomly choose from those interested
           Vector<Integer> interestedPeers = getInterestedPeers();
-          Logger.Debug("Got int " + interestedPeers.size());
+          Logger.Debug("Calculated interested peers " + interestedPeers.size());
           if (interestedPeers.size() > 0) {
             ThreadLocalRandom.current().ints(0, interestedPeers.size()).distinct()
                 .limit(Math.min(interestedPeers.size(), numPreferredNeighbors)).forEach((index) -> {
@@ -85,6 +85,8 @@ public class ConnectionHandler {
                   }
                   shouldBeUnchoked.put(randomId, true);
                 });
+          }else{
+            
           }
         } else {
           // calculate download rates
@@ -191,7 +193,7 @@ public class ConnectionHandler {
     };
 
     float p = Configs.getOptimisticUnchokingInterval();
-    beginRepeatedTimer(task, p);
+    // beginRepeatedTimer(task, p);
   }
 
   // if all of the peers have the entire file, terminate the connection
