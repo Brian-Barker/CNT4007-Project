@@ -15,7 +15,7 @@ public class Configs {
     peerInfo = Configs.getPeerList("PeerInfo.cfg");
   }
 
-  private static Vector<PeerInfo> getPeerList(String filename) {
+  public static Vector<PeerInfo> getPeerList(String filename) {
     Vector<PeerInfo> peerInfoVector = new Vector<PeerInfo>();
 
     try {

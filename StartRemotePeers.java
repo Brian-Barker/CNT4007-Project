@@ -21,29 +21,9 @@ public class StartRemotePeers {
 	public Vector<PeerInfo> peerInfoVector;
 
 	public void getConfiguration() {
-		String st;
 		peerInfoVector = new Vector<PeerInfo>();
-		// try {
-		// BufferedReader in = new BufferedReader(new
-		// FileReader("project_config_file_small/PeerInfo.cfg"));
-		// while ((st = in.readLine()) != null) {
-
-		// String[] tokens = st.split("\\s+");
-		// // System.out.println("tokens begin ----");
-		// // for (int x=0; x<tokens.length; x++) {
-		// // System.out.println(tokens[x]);
-		// // }
-		// // System.out.println("tokens end ----");
-
-		// peerInfoVector.addElement(new PeerInfo(tokens[0], tokens[1], tokens[2],
-		// tokens[3].equals("1")));
-
-		// }
-
-		// in.close();
-		// } catch (Exception ex) {
-		// System.out.println(ex.toString());
-		// }
+		Configs configs = new Configs();
+		peerInfoVector = configs.getPeerList("PeerInfo.cfg");
 	}
 
 	/**
