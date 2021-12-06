@@ -20,6 +20,20 @@ public class PieceHandler {
   public Bitfield bitfield;
   // the pieces that we have requested for in the above bitset
   public Bitfield requested;
+
+  /*
+    Each time a peer requests a piece to Other Peer, store
+    Other Peer: list of pieces requested from other peer
+
+    When other peer chokes before receiving the piece, reset the
+    piece index in requested
+
+    Clear requested buffer when:
+    1. receiving a proper piece from other peer
+    2. other peer has choked us
+  */
+  Map<Integer, ArrayList<Integer>> requestedBuffer;
+
   int pieceSize = 0;
   int fileSize = 0;
   String fileName = "";

@@ -3,6 +3,7 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Vector;
+import java.util.ArrayList;
 
 // The PeerConnection class handles the connection to another peer
 // input stream to send to the client
@@ -71,6 +72,7 @@ public class PeerConnection {
         if (type == TYPE_CHOKE) {
           // TODO is this enough?
           connectionChoked = true;
+          resetRequestedWithBuffer();
           Logger.LogChoking(peerId, otherPeerId);
         }
         if (type == TYPE_UNCHOKE) {
@@ -103,9 +105,11 @@ public class PeerConnection {
           }
         }
         if (type == TYPE_PIECE) {
-          int pieceIndex = in.readInt();
-          byte[] payload = in.readNBytes(payloadLength - 4);
-          readPiece(pieceIndex, payload);
+          if(connectionChoked == false){
+            int pieceIndex = in.readInt();
+            byte[] payload = in.readNBytes(payloadLength - 4);
+            readPiece(pieceIndex, payload);
+          }
         }
       }
     } catch (IOException e) {
@@ -164,6 +168,14 @@ public class PeerConnection {
     if (interestingPieces.size() > 0) {
       Integer randomPiece = interestingPieces.get((int) (Math.random() * interestingPieces.size()));
       PieceHandler.getInstance().requested.setBit(randomPiece);
+
+      // check if requested buffer array is null
+      if (PieceHandler.getInstance().requestedBuffer.containsKey(otherPeerId) == false) {
+        PieceHandler.getInstance().requestedBuffer.put(otherPeerId, new ArrayList<Integer>());
+      }
+      // add to requested buffer in PieceHandler
+      PieceHandler.getInstance().requestedBuffer.get(otherPeerId).add(randomPiece);
+      
       sendMessage(TYPE_REQUEST, intToByteArray(randomPiece));
     } else {
       // no more interesting pieces from this peer
@@ -244,6 +256,14 @@ public class PeerConnection {
 
     ConnectionHandler.getInstance().updateNotInterested();
 
+    // remove from requested buffer the piece index that we just got
+    if (PieceHandler.getInstance().requestedBuffer.containsKey(otherPeerId)) {
+      int index = PieceHandler.getInstance().requestedBuffer.get(otherPeerId).indexOf(pieceIndex);
+      if(index != -1){
+        PieceHandler.getInstance().requestedBuffer.get(otherPeerId).remove(index);
+      }
+    }
+
     if (gotAllPieces == false) {
       // still more pieces needed
       sendRequestMessage();
@@ -313,6 +333,17 @@ public class PeerConnection {
 
   public boolean isChoked() {
     return connectionChoked;
+  }
+
+  // when choked, update the requested bitfield in PieceHandler
+  public void resetRequestedWithBuffer() {
+    if(PieceHandler.getInstance().requestedBuffer.containsKey(otherPeerId)){
+       // loop through the buffer and remove all the pieces from the requested buffer
+      for (int i = 0; i < PieceHandler.getInstance().requestedBuffer.get(otherPeerId).size(); i++) {
+        int pieceIndex = PieceHandler.getInstance().requestedBuffer.get(otherPeerId).get(i);
+        PieceHandler.getInstance().requested.bitfield.clear(pieceIndex);
+      }
+    }
   }
 
   public void close() {
