@@ -24,6 +24,7 @@ public class peerProcess {
 			// start the peer with the valid peer id
 			peerProcess peer = new peerProcess();
 			peer.start(Integer.parseInt(peerId));
+			Logger.Write("Merry Christmas!");
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
@@ -103,7 +104,7 @@ public class peerProcess {
 			peerProcess.clientThreads.add(clientThread);
 		} catch (IOException e) {
 			System.out.println(e);
-			Logger.Write(e.toString());
+			//Logger.Write(e.toString());
 		}
 	}
 

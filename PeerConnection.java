@@ -65,7 +65,7 @@ public class PeerConnection {
     readHandshake();
     try {
       while (true) {
-        System.out.print("--");
+        //System.out.print("--");
         int rawLength = in.readInt();
         byte type = in.readByte();
         int payloadLength = rawLength - 1;
@@ -169,7 +169,7 @@ public class PeerConnection {
   public void sendRequestMessage() {
     // select a random piece the other peer has and local peer does not and local has not requested yet
     Vector<Integer> interestingPieces = PieceHandler.getInstance().getRequestablePieces(otherPeerBitfield);
-    Logger.Write("UNREQ " + interestingPieces.size());
+    //Logger.Write("UNREQ " + interestingPieces.size());
     if (interestingPieces.size() > 0) {
       Integer randomPiece = interestingPieces.get((int) (Math.random() * interestingPieces.size()));
       PieceHandler.getInstance().requested.setBit(randomPiece);
@@ -181,7 +181,7 @@ public class PeerConnection {
       // add to requested buffer in PieceHandler
       PieceHandler.getInstance().requestedBuffer.get(otherPeerId).add(randomPiece);
 
-      Logger.Write("Requesting for piece " + randomPiece);
+      //Logger.Write("Requesting for piece " + randomPiece);
       
       sendMessage(TYPE_REQUEST, intToByteArray(randomPiece));
     } else {

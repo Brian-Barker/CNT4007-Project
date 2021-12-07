@@ -103,10 +103,10 @@ public class ConnectionHandler {
             }
           });
 
-          for(Integer i : interestedPeers) {
-            Logger.Write(i.toString());
-            Logger.Write("Peer: " + i.toString() + " Download rate: " + peersSockets.get(i).previousIntervalDownloadRate() + "");
-          }
+          // for(Integer i : interestedPeers) {
+          //   Logger.Write(i.toString());
+          //   Logger.Write("Peer: " + i.toString() + " Download rate: " + peersSockets.get(i).previousIntervalDownloadRate() + "");
+          // }
 
           // interestedPeers is now sorted in descending order of download rates, so limit the number of preferred neighbors
           // and choose the first N from the list
@@ -169,10 +169,8 @@ public class ConnectionHandler {
   }
 
   public void optimisticallyUnchoke() {
-    Logger.Write("Reached optimistically unchoke");
     TimerTask task = new TimerTask() {
       public void run() {
-        Logger.Write("Inside optimistically unchoke task");
         // TODO verify if this is correct, this was made with heavy Copilot use at 5am
 
         // get neighbors that are currently choked
@@ -213,6 +211,7 @@ public class ConnectionHandler {
           }
         }
 
+        ConnectionHandler.getInstance().terminateConnectionIfNeeded();
       }
     };
 
@@ -226,11 +225,11 @@ public class ConnectionHandler {
       for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {
         PeerConnection conn = entry.getValue();
         conn.close();
-        System.out.println("Closing connection to peer IT HAS ALL PIECES " + conn.otherPeerId);
+        //System.out.println("Closing connection to peer IT HAS ALL PIECES " + conn.otherPeerId);
         Logger.LogPeerDisconnected(localPeer.peerId, conn.otherPeerId);
       }
       // TODO: Close all threads the stop this program
-      System.out.println("closing process");
+      //System.out.println("closing process");
       System.exit(0);
 
       return true;
@@ -240,21 +239,21 @@ public class ConnectionHandler {
 
   //function to check if all the peers have all pieces downloaded
   public boolean allPeersHaveAllPieces() {
-    if(peersSockets.entrySet().size() == 0) {
+    //Logger.Write("Checking Exit: "+peersSockets.entrySet().size()+" & "+Configs.peerInfo.size());
+    if(peersSockets.entrySet().size() == 0 || peersSockets.entrySet().size() < Configs.peerInfo.size()-1) {
       return false;
     }
-
+    //Logger.Write(" "+PieceHandler.getInstance().hasWritten+" only has "+PieceHandler.getInstance().piecesDownloaded);
     if(!PieceHandler.getInstance().hasWritten) return false;
 
     for (Map.Entry<Integer, PeerConnection> entry : peersSockets.entrySet()) {  
       PeerConnection conn = entry.getValue();
-      //System.out.println("Other Peer ID: " + conn.otherPeerId + " Other peer bitfield: " + conn.otherPeerBitfield.bitfield.toString());
-      System.out.println("OTHER CARD: "+conn.otherPeerId+" null: "+(conn.otherPeerBitfield == null));
-      if (conn.otherPeerBitfield == null || conn.otherPeerBitfield.bitfieldCardinality() < PieceHandler.getInstance().pieces) {
-        if(conn.otherPeerBitfield != null)
-          System.out.println(" has "+conn.otherPeerBitfield.bitfieldCardinality());
 
-        //System.out.println("Other Peer ID: " + conn.otherPeerId + " Other peer bitfield: " + conn.otherPeerBitfield.bitfield.toString());
+      if(conn.otherPeerBitfield == null){
+        conn.otherPeerBitfield = new Bitfield(PieceHandler.getInstance().pieces);
+      }
+      //Logger.Write("Peer "+conn.otherPeerId+" has "+conn.otherPeerBitfield.bitfieldCardinality()+"/"+PieceHandler.getInstance().pieces);
+      if (conn.otherPeerBitfield.bitfieldCardinality() < PieceHandler.getInstance().pieces) {
         return false;
       }
     }
@@ -307,7 +306,7 @@ public class ConnectionHandler {
       // Integer peerId = entry.getKey();
       PeerConnection conn = entry.getValue();
 
-      Logger.Debug("Sending have to: " + conn.otherPeerId+" for piece "+pieceIndex);
+      //Logger.Write("Sending have to: " + conn.otherPeerId+" for piece "+pieceIndex);
       // if (conn.otherPeerId != peerIdToNotSendTo) {
         conn.sendHave(pieceIndex);
       // }

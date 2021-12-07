@@ -80,7 +80,7 @@ public class Logger {
 
   // not in spec
   public static void LogPeerDisconnected(int peerId, int otherPeer) {
-    Write(p(peerId)+" disconnected from "+p(otherPeer) + ". Peer terminated.");
+    Write(p(peerId)+" disconnected from "+p(otherPeer) + ".");
   }
 
   public static void Write(String rawMessage) {
@@ -95,7 +95,7 @@ public class Logger {
   }
 
   public static void Debug(String rawMessage) {
-    if (true) {
+    if (false) {
       System.out.println(rawMessage);
     }
   }
